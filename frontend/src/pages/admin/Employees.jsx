@@ -9,6 +9,9 @@ export default function Employees() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
@@ -67,6 +70,64 @@ export default function Employees() {
       fetchEmployees(); 
     } catch (err) {
       alert(err.response?.data?.error || "Error adding employee");
+    }
+  };
+
+  // 4. Handle Edit Employee
+  const handleEditClick = (employee) => {
+    // Split name into firstName and lastName for the form
+    const nameParts = employee.name.split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    
+    setSelectedEmployee(employee);
+    setFormData({
+      firstName,
+      lastName,
+      email: employee.email,
+      phone: employee.phone || "",
+      department: employee.department,
+      position: employee.position || "",
+      joinDate: employee.joinDate || "",
+      salary: employee.salary || "",
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateEmployee = async (e) => {
+    e.preventDefault();
+    try {
+      const submissionData = {
+        ...formData,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+      };
+      await api.put(`/employee/${selectedEmployee._id}`, submissionData);
+      
+      alert("Employee updated successfully!");
+      setShowEditModal(false);
+      setSelectedEmployee(null);
+      setFormData({ firstName: "", lastName: "", email: "", phone: "", department: "", position: "", joinDate: "", salary: "" });
+      fetchEmployees();
+    } catch (err) {
+      alert(err.response?.data?.error || "Error updating employee");
+    }
+  };
+
+  // 5. Handle Delete Employee
+  const handleDeleteClick = (employee) => {
+    setSelectedEmployee(employee);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await api.delete(`/employee/${selectedEmployee._id}`);
+      alert("Employee deleted successfully!");
+      setShowDeleteConfirm(false);
+      setSelectedEmployee(null);
+      fetchEmployees();
+    } catch (err) {
+      alert(err.response?.data?.error || "Error deleting employee");
     }
   };
 
@@ -216,8 +277,18 @@ export default function Employees() {
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">₹{emp.salary?.toLocaleString()}</td>
                         <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-2">
-                            <button className="p-2 hover:bg-blue-50 rounded-lg text-blue-600"><FiEdit2 className="w-4 h-4" /></button>
-                            <button className="p-2 hover:bg-red-50 rounded-lg text-red-600"><FiTrash2 className="w-4 h-4" /></button>
+                            <button 
+                              onClick={() => handleEditClick(emp)} 
+                              className="p-2 hover:bg-blue-50 rounded-lg text-blue-600"
+                            >
+                              <FiEdit2 className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteClick(emp)} 
+                              className="p-2 hover:bg-red-50 rounded-lg text-red-600"
+                            >
+                              <FiTrash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -287,6 +358,91 @@ export default function Employees() {
                 <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition">Add Employee</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Employee Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-screen overflow-y-auto">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Edit Employee</h2>
+            <form className="space-y-4" onSubmit={handleUpdateEmployee}>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                  <input type="text" name="firstName" required value={formData.firstName} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <input type="text" name="lastName" required value={formData.lastName} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" name="email" required value={formData.email} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                  <select name="department" required value={formData.department} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Select department</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="HR">HR</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Marketing">Marketing</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                  <input type="text" name="position" value={formData.position} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Join Date</label>
+                  <input type="date" name="joinDate" value={formData.joinDate} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Salary</label>
+                  <input type="number" name="salary" required value={formData.salary} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <button type="button" onClick={() => { setShowEditModal(false); setSelectedEmployee(null); }} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition">Cancel</button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition">Update Employee</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Confirm Delete</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete <span className="font-semibold">{selectedEmployee?.name}</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { setShowDeleteConfirm(false); setSelectedEmployee(null); }} 
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteConfirm} 
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

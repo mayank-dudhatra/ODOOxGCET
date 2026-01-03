@@ -134,3 +134,91 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * UPDATE: Admin Update Employee Details
+ */
+export const updateEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, phone, department, position, joinDate, salary, status } = req.body;
+
+    // 1. Verify employee belongs to the admin's company
+    const employee = await User.findOne({
+      _id: id,
+      companyId: req.user.companyId,
+      role: "employee"
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found in your company" });
+    }
+
+    // 2. Check if email is being changed to an existing email
+    if (email && email !== employee.email) {
+      const emailExists = await User.findOne({ 
+        email, 
+        companyId: req.user.companyId,
+        _id: { $ne: id } 
+      });
+      
+      if (emailExists) {
+        return res.status(400).json({ error: "Email already exists for another employee" });
+      }
+    }
+
+    // 3. Update employee data
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
+    if (department) updateData.department = department;
+    if (position) updateData.position = position;
+    if (joinDate) updateData.joinDate = joinDate;
+    if (salary !== undefined) updateData.salary = salary;
+    if (status) updateData.status = status;
+
+    const updatedEmployee = await User.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    ).select("-password");
+
+    res.status(200).json({
+      message: "Employee updated successfully",
+      data: updatedEmployee
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * DELETE: Remove Employee
+ */
+export const deleteEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Verify employee belongs to the admin's company
+    const employee = await User.findOne({
+      _id: id,
+      companyId: req.user.companyId,
+      role: "employee"
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found in your company" });
+    }
+
+    // 2. Delete the employee
+    await User.findByIdAndDelete(id);
+
+    res.status(200).json({
+      message: "Employee deleted successfully",
+      data: { id }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
