@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import EmployeeDetailsModal from "../../components/EmployeeDetailsModal";
 import { FiPlus, FiEdit2, FiTrash2, FiSearch } from "react-icons/fi";
