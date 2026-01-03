@@ -34,8 +34,16 @@ export default function Login() {
       // Use login function from AuthContext to update user state
       login(response.data.user);
 
-      // Navigate to shared dashboard (handles role-based content)
-      navigate("/dashboard");
+      const role = response.data.user?.role;
+      if (role === "admin") {
+        navigate("/admin/attendance");
+      } else if (role === "hr") {
+        navigate("/hr/attendance");
+      } else if (role === "employee") {
+        navigate("/employee/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
     } finally {

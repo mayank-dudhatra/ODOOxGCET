@@ -1,15 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
 import { useAuth } from "../../context/AuthContext";
 import { FiEdit2, FiMail, FiPhone, FiBriefcase, FiMapPin, FiCalendar } from "react-icons/fi";
-import { getCurrentEmployeeData } from "../../services/dummyData";
+import api from "../../services/api";
 
 export default function Profile() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [employee, setEmployee] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const employee = getCurrentEmployeeData();
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get("/employee/profile");
+        setEmployee(response.data);
+      } catch (err) {
+        setError("Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  if (loading) return <div className="p-8">Loading...</div>;
+  if (error) return <div className="p-8 text-red-600">{error}</div>;
+  if (!employee) return <div className="p-8">No profile data found.</div>;
 
   return (
     <div className="flex h-screen bg-gray-50">

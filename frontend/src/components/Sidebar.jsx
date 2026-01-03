@@ -24,9 +24,17 @@ export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: 
   const sidebarOpen = propSidebarOpen !== undefined ? propSidebarOpen : internalSidebarOpen;
   const setSidebarOpen = propSetSidebarOpen || setInternalSidebarOpen;
 
+  const getHomePath = () => {
+    if (user?.role === "admin") return "/admin/attendance";
+    if (user?.role === "hr") return "/hr/attendance";
+    if (user?.role === "employee") return "/employee/dashboard";
+    if (user?.role === "manager") return "/manager/team";
+    return "/dashboard";
+  };
+
   // Role-based menu items
   const getMenuItems = () => {
-    const baseItems = [{ icon: FiHome, label: "Dashboard", path: "/dashboard" }];
+    const baseItems = [{ icon: FiHome, label: "Dashboard", path: getHomePath() }];
 
     if (user?.role === "admin") {
       return [
@@ -39,7 +47,9 @@ export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: 
         { icon: FiFileText, label: "Reports", path: "/admin/reports" },
         { icon: FiSettings, label: "Settings", path: "/admin/settings" },
       ];
-    } else if (user?.role === "hr") {
+    }
+
+    if (user?.role === "hr") {
       return [
         ...baseItems,
         { icon: FiUsers, label: "Employees", path: "/hr/employees" },
@@ -49,7 +59,9 @@ export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: 
         { icon: FiFileText, label: "Reports", path: "/hr/reports" },
         { icon: FiSettings, label: "Settings", path: "/admin/settings" },
       ];
-    } else if (user?.role === "employee") {
+    }
+
+    if (user?.role === "employee") {
       return [
         ...baseItems,
         { icon: FiCalendar, label: "Attendance", path: "/employee/attendance" },
@@ -58,7 +70,9 @@ export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: 
         { icon: FiUser, label: "Profile", path: "/employee/profile" },
         { icon: FiSettings, label: "Settings", path: "/employee/settings" },
       ];
-    } else if (user?.role === "manager") {
+    }
+
+    if (user?.role === "manager") {
       return [
         ...baseItems,
         { icon: FiUsers, label: "My Team", path: "/manager/team" },

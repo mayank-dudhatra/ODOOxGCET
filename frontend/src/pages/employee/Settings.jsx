@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import { FiEdit2, FiSave, FiX, FiCamera, FiLock } from "react-icons/fi";
+import api from "../../services/api";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -10,20 +11,9 @@ export default function Settings() {
 
   // Profile Information State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileData, setProfileData] = useState({
-    employeeId: user?.employeeId || "EMP20230001",
-    firstName: user?.firstName || "John",
-    lastName: user?.lastName || "Doe",
-    email: user?.email || "john.doe@company.com",
-    phone: "+91-9876543210",
-    dateOfBirth: "1995-06-15",
-    gender: "Male",
-    nationality: "Indian",
-    address: "123 Main Street, Apt 4B",
-    city: "Mumbai",
-    state: "Maharashtra",
-    zipCode: "400001",
-  });
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // Security State
   const [isEditingSecurity, setIsEditingSecurity] = useState(false);
@@ -33,31 +23,68 @@ export default function Settings() {
     confirmPassword: "",
   });
 
-  const handleProfileSave = () => {
-    console.log("Saving profile data:", profileData);
-    setIsEditingProfile(false);
-    alert("Profile information updated successfully!");
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get("/employee/profile");
+        // Parse name into firstName and lastName for display
+        const nameParts = response.data.name ? response.data.name.split(" ") : ["", ""];
+        setProfileData({
+          ...response.data,
+          firstName: nameParts[0] || "",
+          lastName: nameParts.slice(1).join(" ") || "",
+        });
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleProfileSave = async () => {
+    try {
+      setLoading(true);
+      // Combine firstName and lastName back into name
+      const updateData = {
+        ...profileData,
+        name: `${profileData.firstName} ${profileData.lastName}`.trim(),
+      };
+      // Remove the split fields before sending
+      delete updateData.firstName;
+      delete updateData.lastName;
+      
+      const response = await api.put("/employee/profile", updateData);
+      // Parse name back for display
+      const nameParts = response.data.name ? response.data.name.split(" ") : ["", ""];
+      setProfileData({
+        ...response.data,
+        firstName: nameParts[0] || "",
+        lastName: nameParts.slice(1).join(" ") || "",
+      });
+      setIsEditingProfile(false);
+      alert("Profile information updated successfully!");
+    } catch (err) {
+      console.error(err);
+      setError("Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSecuritySave = () => {
-    if (securityData.newPassword !== securityData.confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-    if (securityData.newPassword.length < 6) {
-      alert("Password must be at least 6 characters!");
-      return;
-    }
-    console.log("Changing password");
-    setIsEditingSecurity(false);
-    setSecurityData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    alert("Password changed successfully!");
-  };
+  // Security logic would go here (not implemented in backend yet)
 
   const tabs = [
     { id: "profile", label: "Profile Settings", icon: "👤" },
     { id: "security", label: "Security", icon: "🔐" },
   ];
+
+  if (loading) return <div className="p-8">Loading...</div>;
+  if (error) return <div className="p-8 text-red-600">{error}</div>;
+  if (!profileData) return <div className="p-8">No profile data found.</div>;
 
   return (
     <div className="h-screen bg-gray-100">
@@ -229,13 +256,13 @@ export default function Settings() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date of Birth
+                      Department
                     </label>
                     <input
-                      type="date"
-                      value={profileData.dateOfBirth}
+                      type="text"
+                      value={profileData.department || ""}
                       onChange={(e) =>
-                        setProfileData({ ...profileData, dateOfBirth: e.target.value })
+                        setProfileData({ ...profileData, department: e.target.value })
                       }
                       disabled={!isEditingProfile}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
@@ -244,95 +271,49 @@ export default function Settings() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Gender
+                      Position
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.position || ""}
+                      onChange={(e) =>
+                        setProfileData({ ...profileData, position: e.target.value })
+                      }
+                      disabled={!isEditingProfile}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Join Date
+                    </label>
+                    <input
+                      type="date"
+                      value={profileData.joinDate || ""}
+                      onChange={(e) =>
+                        setProfileData({ ...profileData, joinDate: e.target.value })
+                      }
+                      disabled={!isEditingProfile}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Status
                     </label>
                     <select
-                      value={profileData.gender}
+                      value={profileData.status || "Active"}
                       onChange={(e) =>
-                        setProfileData({ ...profileData, gender: e.target.value })
+                        setProfileData({ ...profileData, status: e.target.value })
                       }
                       disabled={!isEditingProfile}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
                     >
-                      <option>Male</option>
-                      <option>Female</option>
-                      <option>Other</option>
+                      <option>Active</option>
+                      <option>Inactive</option>
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nationality
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.nationality}
-                      onChange={(e) =>
-                        setProfileData({ ...profileData, nationality: e.target.value })
-                      }
-                      disabled={!isEditingProfile}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.address}
-                      onChange={(e) =>
-                        setProfileData({ ...profileData, address: e.target.value })
-                      }
-                      disabled={!isEditingProfile}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.city}
-                      onChange={(e) =>
-                        setProfileData({ ...profileData, city: e.target.value })
-                      }
-                      disabled={!isEditingProfile}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      State
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.state}
-                      onChange={(e) =>
-                        setProfileData({ ...profileData, state: e.target.value })
-                      }
-                      disabled={!isEditingProfile}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ZIP Code
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.zipCode}
-                      onChange={(e) =>
-                        setProfileData({ ...profileData, zipCode: e.target.value })
-                      }
-                      disabled={!isEditingProfile}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
-                    />
                   </div>
                 </div>
               </div>
