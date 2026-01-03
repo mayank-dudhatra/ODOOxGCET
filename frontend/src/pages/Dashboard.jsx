@@ -58,12 +58,36 @@ export default function Dashboard() {
   // ADMIN DASHBOARD
   const AdminDashboard = () => (
     <>
+      {/* Stats Cards - Company Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <p className="text-sm text-gray-500 font-medium">Total Employees</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">205</p>
+          <p className="text-xs text-green-600 mt-2">↑ 5 this month</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <p className="text-sm text-gray-500 font-medium">Present Today</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">178</p>
+          <p className="text-xs text-green-600 mt-2">86.8% attendance</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <p className="text-sm text-gray-500 font-medium">On Leave</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">12</p>
+          <p className="text-xs text-yellow-600 mt-2">Approved leaves</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <p className="text-sm text-gray-500 font-medium">Pending Approvals</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">8</p>
+          <p className="text-xs text-orange-600 mt-2">Awaiting action</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Attendance Trend */}
+        {/* Attendance Trend (All Employees) */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-gray-900">Attendance Trend</h2>
-            <p className="text-sm text-gray-500 mt-1">Last 7 days</p>
+            <h2 className="text-lg font-bold text-gray-900">Attendance Trend (All)</h2>
+            <p className="text-sm text-gray-500 mt-1">Last 7 days - Company-wide</p>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={attendanceTrendData}>
@@ -101,7 +125,7 @@ export default function Dashboard() {
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="mb-6">
             <h2 className="text-lg font-bold text-gray-900">Monthly Attendance</h2>
-            <p className="text-sm text-gray-500 mt-1">Last 6 months</p>
+            <p className="text-sm text-gray-500 mt-1">Last 6 months - All employees</p>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={monthlyAttendanceData}>
@@ -114,11 +138,11 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Leave Statistics */}
+        {/* Leave Statistics (All Employees) */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-gray-900">Leave Statistics</h2>
-            <p className="text-sm text-gray-500 mt-1">Leave status distribution</p>
+            <h2 className="text-lg font-bold text-gray-900">Leave Statistics (All)</h2>
+            <p className="text-sm text-gray-500 mt-1">Company-wide leave status</p>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={leaveStatisticsData} layout="vertical">
@@ -131,13 +155,18 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
       </div>
+    </>
+  );
 
+  // HR DASHBOARD
+  const HRDashboard = () => (
+    <>
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <p className="text-sm text-gray-500 font-medium">Total Employees</p>
           <p className="text-3xl font-bold text-gray-900 mt-2">205</p>
-          <p className="text-xs text-green-600 mt-2">↑ 5 this month</p>
+          <p className="text-xs text-green-600 mt-2">Active workforce</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <p className="text-sm text-gray-500 font-medium">Present Today</p>
@@ -145,31 +174,21 @@ export default function Dashboard() {
           <p className="text-xs text-green-600 mt-2">86.8% attendance</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <p className="text-sm text-gray-500 font-medium">On Leave</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">12</p>
-          <p className="text-xs text-yellow-600 mt-2">Approved leaves</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <p className="text-sm text-gray-500 font-medium">Pending Approvals</p>
+          <p className="text-sm text-gray-500 font-medium">Pending Leave Requests</p>
           <p className="text-3xl font-bold text-gray-900 mt-2">8</p>
           <p className="text-xs text-orange-600 mt-2">Awaiting action</p>
         </div>
       </div>
-    </>
-  );
 
-  // HR DASHBOARD
-  const HRDashboard = () => (
-    <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Attendance Summary */}
+        {/* Attendance Trends (All) */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-gray-900">Company Attendance</h2>
-            <p className="text-sm text-gray-500 mt-1">Today's status</p>
+            <h2 className="text-lg font-bold text-gray-900">Attendance Trends (All)</h2>
+            <p className="text-sm text-gray-500 mt-1">Last 7 days - All employees</p>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={attendanceTrendData.slice(0, 5)}>
+            <BarChart data={attendanceTrendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
               <XAxis dataKey="date" stroke="#6B7280" />
               <YAxis stroke="#6B7280" />
@@ -180,11 +199,11 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Leave Requests */}
+        {/* Leave Statistics (All) */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-gray-900">Leave Requests</h2>
-            <p className="text-sm text-gray-500 mt-1">Pending approvals</p>
+            <h2 className="text-lg font-bold text-gray-900">Leave Statistics (All)</h2>
+            <p className="text-sm text-gray-500 mt-1">Company-wide leave requests</p>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={leaveStatisticsData}>
@@ -196,21 +215,40 @@ export default function Dashboard() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
 
-      {/* HR Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        {/* Monthly Attendance Percentage */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <p className="text-sm text-gray-500 font-medium">New Hires This Month</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">12</p>
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-gray-900">Monthly Attendance</h2>
+            <p className="text-sm text-gray-500 mt-1">Last 6 months - All employees</p>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={monthlyAttendanceData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis dataKey="month" stroke="#6B7280" />
+              <YAxis stroke="#6B7280" domain={[0, 100]} />
+              <Tooltip contentStyle={{ backgroundColor: "#1F2937", border: "none", borderRadius: "8px", color: "#fff" }} />
+              <Line type="monotone" dataKey="percentage" stroke="#3B82F6" strokeWidth={3} dot={{ fill: "#3B82F6", r: 5 }} name="Attendance %" />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
+
+        {/* Department Distribution */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <p className="text-sm text-gray-500 font-medium">Pending Leave Requests</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">8</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <p className="text-sm text-gray-500 font-medium">Active Employees</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">189</p>
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-gray-900">Department Distribution</h2>
+            <p className="text-sm text-gray-500 mt-1">Employee count by department</p>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={departmentData} cx="50%" cy="50%" labelLine={false} label={({ name, value }) => `${name}: ${value}`} outerRadius={100} dataKey="value">
+                {departmentData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ backgroundColor: "#1F2937", border: "none", borderRadius: "8px", color: "#fff" }} />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </>
@@ -219,12 +257,31 @@ export default function Dashboard() {
   // EMPLOYEE DASHBOARD
   const EmployeeDashboard = () => (
     <>
+      {/* Employee Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <p className="text-sm text-gray-500 font-medium">Total Working Days</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">22</p>
+          <p className="text-xs text-gray-600 mt-2">This month</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <p className="text-sm text-gray-500 font-medium">Days Present</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">20</p>
+          <p className="text-xs text-green-600 mt-2">Good attendance</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <p className="text-sm text-gray-500 font-medium">Attendance Rate</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">91%</p>
+          <p className="text-xs text-green-600 mt-2">Above average</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* My Attendance */}
+        {/* Personal Attendance */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-gray-900">My Attendance</h2>
-            <p className="text-sm text-gray-500 mt-1">Last 7 days</p>
+            <h2 className="text-lg font-bold text-gray-900">My Personal Attendance</h2>
+            <p className="text-sm text-gray-500 mt-1">Last 6 months</p>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={monthlyAttendanceData}>
@@ -237,39 +294,101 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Leave Balance */}
+        {/* Personal Leave Summary */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">Leave Balance</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-6">My Personal Leave Summary</h2>
           <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-              <span className="font-medium text-gray-700">Casual Leave</span>
-              <span className="text-lg font-bold text-blue-600">8 / 12</span>
+            <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div>
+                <span className="font-medium text-gray-700 text-sm">Casual Leave</span>
+                <p className="text-xs text-gray-500 mt-1">Available / Total</p>
+              </div>
+              <span className="text-2xl font-bold text-blue-600">8 / 12</span>
             </div>
-            <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-              <span className="font-medium text-gray-700">Sick Leave</span>
-              <span className="text-lg font-bold text-green-600">4 / 6</span>
+            <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg border border-green-200">
+              <div>
+                <span className="font-medium text-gray-700 text-sm">Sick Leave</span>
+                <p className="text-xs text-gray-500 mt-1">Available / Total</p>
+              </div>
+              <span className="text-2xl font-bold text-green-600">4 / 6</span>
             </div>
-            <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-              <span className="font-medium text-gray-700">Earned Leave</span>
-              <span className="text-lg font-bold text-purple-600">12 / 20</span>
+            <div className="flex justify-between items-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <div>
+                <span className="font-medium text-gray-700 text-sm">Earned Leave</span>
+                <p className="text-xs text-gray-500 mt-1">Available / Total</p>
+              </div>
+              <span className="text-2xl font-bold text-purple-600">12 / 20</span>
+            </div>
+            <div className="flex justify-between items-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+              <div>
+                <span className="font-medium text-gray-700 text-sm">Pending Requests</span>
+                <p className="text-xs text-gray-500 mt-1">Awaiting approval</p>
+              </div>
+              <span className="text-2xl font-bold text-orange-600">2</span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Employee Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        {/* Weekly Attendance Pattern */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <p className="text-sm text-gray-500 font-medium">Total Working Days</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">22</p>
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-gray-900">My Weekly Pattern</h2>
+            <p className="text-sm text-gray-500 mt-1">Last 7 days attendance</p>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={[
+              { day: "Mon", hours: 8 },
+              { day: "Tue", hours: 9 },
+              { day: "Wed", hours: 8 },
+              { day: "Thu", hours: 7.5 },
+              { day: "Fri", hours: 8 },
+              { day: "Sat", hours: 0 },
+              { day: "Sun", hours: 0 },
+            ]}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis dataKey="day" stroke="#6B7280" />
+              <YAxis stroke="#6B7280" />
+              <Tooltip contentStyle={{ backgroundColor: "#1F2937", border: "none", borderRadius: "8px", color: "#fff" }} />
+              <Bar dataKey="hours" fill="#10B981" radius={[8, 8, 0, 0]} name="Hours Worked" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
+
+        {/* Leave History */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <p className="text-sm text-gray-500 font-medium">Days Present</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">20</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <p className="text-sm text-gray-500 font-medium">Attendance Rate</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">91%</p>
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-gray-900">Recent Leave History</h2>
+            <p className="text-sm text-gray-500 mt-1">Last 3 months</p>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Casual Leave</p>
+                <p className="text-xs text-gray-500">Dec 20-22, 2025</p>
+              </div>
+              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                Approved
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Sick Leave</p>
+                <p className="text-xs text-gray-500">Nov 15, 2025</p>
+              </div>
+              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                Approved
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Earned Leave</p>
+                <p className="text-xs text-gray-500">Oct 10-12, 2025</p>
+              </div>
+              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                Approved
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </>

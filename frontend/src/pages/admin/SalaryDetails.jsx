@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import { getEmployeeSalaryDetails } from "../../services/dummyData";
 import { FiArrowLeft, FiEdit2, FiCheck, FiX, FiAlertCircle } from "react-icons/fi";
 
 export default function SalaryDetails() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { employeeId } = useParams();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -33,7 +35,11 @@ export default function SalaryDetails() {
   }
 
   const handleEditToggle = () => {
-    setIsEditMode(!isEditMode);
+    if (user?.role === "admin") {
+      setIsEditMode(!isEditMode);
+    } else {
+      alert("You do not have permission to edit salary information");
+    }
   };
 
   const handleSave = () => {
@@ -117,13 +123,15 @@ export default function SalaryDetails() {
 
             <div className="flex items-center gap-2">
               {!isEditMode ? (
-                <button
-                  onClick={handleEditToggle}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
-                >
-                  <FiEdit2 className="w-4 h-4" />
-                  Edit
-                </button>
+                user?.role === "admin" ? (
+                  <button
+                    onClick={handleEditToggle}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
+                  >
+                    <FiEdit2 className="w-4 h-4" />
+                    Edit
+                  </button>
+                ) : null
               ) : (
                 <>
                   <button
@@ -144,9 +152,7 @@ export default function SalaryDetails() {
               )}
             </div>
           </div>
-        </div>
-
-        {/* Content */}
+        </div>        {/* Content */}
         <div className="p-6 space-y-6">
           {/* General Work Information */}
           <div className="bg-white rounded-lg shadow-sm p-6">

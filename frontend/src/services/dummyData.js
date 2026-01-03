@@ -807,3 +807,65 @@ export const updateEmployeeSalaryDetails = (employeeId, updatedData) => {
     data: updatedData,
   };
 };
+
+// ============ REPORTS ============
+
+export const getReportTypes = () => {
+  return [
+    { id: 1, name: "Salary Statement Report" },
+    { id: 2, name: "Attendance Report" },
+    { id: 3, name: "Leave Report" },
+    { id: 4, name: "Payroll Report" },
+  ];
+};
+
+export const getSalaryStatementReport = (employeeId, year) => {
+  const salaryData = getEmployeeSalaryDetails(employeeId);
+  const allSalaries = getAllEmployeeSalaries();
+  const empSalary = allSalaries.find((s) => s.employeeId === employeeId);
+
+  if (!salaryData || !empSalary) return null;
+
+  if (!salaryData || !empSalary) return null;
+
+  return {
+    reportType: "Salary Statement Report",
+    generatedDate: new Date().toISOString().split("T")[0],
+    employeeDetails: {
+      name: empSalary.name,
+      employeeId: employeeId,
+      department: empSalary.department,
+      designation: empSalary.position,
+      dateOfJoining: "Jan 15, 2023",
+      salaryEffectiveFrom: "Jul 01, 2023",
+    },
+    salaryComponents: salaryData.salaryComponents.map((comp) => ({
+      name: comp.name,
+      monthlyAmount: comp.amount,
+      yearlyAmount: comp.amount * 12,
+    })),
+    deductions: [
+      {
+        name: "Provident Fund (PF) - Employee",
+        monthlyAmount: salaryData.providentFund.employeeContribution,
+        yearlyAmount: salaryData.providentFund.employeeContribution * 12,
+      },
+      {
+        name: "Professional Tax",
+        monthlyAmount: salaryData.taxDeductions.professionalTax,
+        yearlyAmount: salaryData.taxDeductions.professionalTax * 12,
+      },
+    ],
+    monthlyGrossSalary: salaryData.grossSalary,
+    yearlyGrossSalary: salaryData.grossSalary * 12,
+    monthlyNetSalary: salaryData.netSalary,
+    yearlyNetSalary: salaryData.netSalary * 12,
+  };
+};
+
+export const generateReport = (reportType, employeeId, year) => {
+  if (reportType === "Salary Statement Report") {
+    return getSalaryStatementReport(employeeId, year);
+  }
+  return null;
+};

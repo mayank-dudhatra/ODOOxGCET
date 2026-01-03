@@ -10,6 +10,7 @@ import {
   FiLogOut,
   FiClock,
   FiUser,
+  FiFileText,
 } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -34,8 +35,8 @@ export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: 
         { icon: FiCalendar, label: "Attendance", path: "/admin/attendance" },
         { icon: FiClock, label: "Time Off", path: "/admin/time-off" },
         { icon: FiDollarSign, label: "Payroll", path: "/admin/payroll" },
-        { icon: FiBarChart2, label: "Salary Management", path: "/admin/salary" },
-        { icon: FiBarChart2, label: "Reports", path: "/admin/reports" },
+        { icon: FiBarChart2, label: "Salary Management", path: "/admin/salary-management" },
+        { icon: FiFileText, label: "Reports", path: "/admin/reports" },
         { icon: FiSettings, label: "Settings", path: "/admin/settings" },
       ];
     } else if (user?.role === "hr") {
@@ -43,16 +44,19 @@ export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: 
         ...baseItems,
         { icon: FiUsers, label: "Employees", path: "/hr/employees" },
         { icon: FiCalendar, label: "Attendance", path: "/hr/attendance" },
-        { icon: FiClock, label: "Leave Requests", path: "/hr/leave-requests" },
+        { icon: FiClock, label: "Time Off", path: "/hr/time-off" },
         { icon: FiDollarSign, label: "Payroll", path: "/hr/payroll" },
-        { icon: FiBarChart2, label: "Reports", path: "/hr/reports" },
+        { icon: FiFileText, label: "Reports", path: "/hr/reports" },
+        { icon: FiSettings, label: "Settings", path: "/admin/settings" },
       ];
     } else if (user?.role === "employee") {
       return [
         ...baseItems,
         { icon: FiCalendar, label: "Attendance", path: "/employee/attendance" },
         { icon: FiClock, label: "Time Off", path: "/employee/leave" },
+        { icon: FiDollarSign, label: "Salary", path: "/employee/salary" },
         { icon: FiUser, label: "Profile", path: "/employee/profile" },
+        { icon: FiSettings, label: "Settings", path: "/employee/settings" },
       ];
     } else if (user?.role === "manager") {
       return [

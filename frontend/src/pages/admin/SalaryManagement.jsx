@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import { getAllEmployeeSalaries } from "../../services/dummyData";
 import { FiSearch, FiEye, FiEdit2, FiGrid, FiList } from "react-icons/fi";
 
 export default function SalaryManagement() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("All Departments");
@@ -51,7 +53,9 @@ export default function SalaryManagement() {
               Salary Management
             </h1>
             <p className="text-gray-600 text-sm mt-1">
-              View and manage employee salary details
+              {user?.role === "admin"
+                ? "View and manage employee salary details"
+                : "View employee salary information"}
             </p>
           </div>
         </div>
@@ -66,7 +70,9 @@ export default function SalaryManagement() {
                 Employee Salaries
               </h2>
               <p className="text-sm text-gray-600">
-                Click on an employee to view and update their salary information
+                {user?.role === "admin"
+                  ? "Click on an employee to view and update their salary information"
+                  : "View employee salary information"}
               </p>
             </div>
 
@@ -192,17 +198,31 @@ export default function SalaryManagement() {
                           </p>
                         </td>
                         <td className="px-6 py-4">
-                          <button
-                            onClick={() =>
-                              navigate(
-                                `/admin/salary-management/${salary.employeeId}`
-                              )
-                            }
-                            className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition font-medium text-sm"
-                          >
-                            <FiEye className="w-4 h-4" />
-                            View/Edit
-                          </button>
+                          {user?.role === "admin" ? (
+                            <button
+                              onClick={() =>
+                                navigate(
+                                  `/admin/salary-management/${salary.employeeId}`
+                                )
+                              }
+                              className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition font-medium text-sm"
+                            >
+                              <FiEdit2 className="w-4 h-4" />
+                              Edit
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                navigate(
+                                  `/admin/salary-management/${salary.employeeId}`
+                                )
+                              }
+                              className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition font-medium text-sm"
+                            >
+                              <FiEye className="w-4 h-4" />
+                              View
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -256,10 +276,23 @@ export default function SalaryManagement() {
                       onClick={() =>
                         navigate(`/admin/salary-management/${salary.employeeId}`)
                       }
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium text-sm"
+                      className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition font-medium text-sm ${
+                        user?.role === "admin"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white"
+                          : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                      }`}
                     >
-                      <FiEdit2 className="w-4 h-4" />
-                      View/Edit
+                      {user?.role === "admin" ? (
+                        <>
+                          <FiEdit2 className="w-4 h-4" />
+                          Edit
+                        </>
+                      ) : (
+                        <>
+                          <FiEye className="w-4 h-4" />
+                          View
+                        </>
+                      )}
                     </button>
                   </div>
                 ))}
