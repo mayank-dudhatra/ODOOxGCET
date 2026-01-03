@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
+import { useAuth } from "../../context/AuthContext"
 import { FiClock, FiCheckCircle, FiCalendar, FiAlertCircle } from "react-icons/fi";
 import {
   getTodayAttendance,

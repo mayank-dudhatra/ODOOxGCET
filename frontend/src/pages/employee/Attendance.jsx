@@ -10,6 +10,9 @@ import {
 
 export default function Attendance() {
   const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [viewMode, setViewMode] = useState("month"); // month or day
   const [currentDate] = useState(new Date());

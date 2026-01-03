@@ -1,9 +1,11 @@
 import { useState } from "react";
 import Sidebar from "../../components/Sidebar";
+import { useAuth } from "../../context/AuthContext";
 import { FiEdit2, FiMail, FiPhone, FiBriefcase, FiMapPin, FiCalendar } from "react-icons/fi";
 import { getCurrentEmployeeData } from "../../services/dummyData";
 
 export default function Profile() {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
