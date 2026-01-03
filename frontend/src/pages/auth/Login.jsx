@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     loginId: "",
     password: "",
@@ -28,7 +30,9 @@ export default function Login() {
 
       // Store token and user data in localStorage
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+      
+      // Use login function from AuthContext to update user state
+      login(response.data.user);
 
       // Navigate to shared dashboard (handles role-based content)
       navigate("/dashboard");

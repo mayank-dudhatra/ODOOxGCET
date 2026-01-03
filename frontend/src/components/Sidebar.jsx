@@ -16,7 +16,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: propSetSidebarOpen }) {
   const [internalSidebarOpen, setInternalSidebarOpen] = useState(true);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -77,7 +77,7 @@ export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: 
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    logout();
     navigate("/login");
   };
 
