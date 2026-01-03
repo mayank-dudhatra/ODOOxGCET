@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017/dayflow";
+    const mongoURI = process.env.MONGO_URI ;
     const conn = await mongoose.connect(mongoURI, {
       serverSelectionTimeoutMS: 5000,
     });
