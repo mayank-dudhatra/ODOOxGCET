@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
-import { getAllEmployeeSalaries, getSalaryStatement } from "../../services/dummyData";
+import { getAllEmployeeSalaries, getSalaryStatementReport } from "../../services/dummyData";
 import { FiDownload, FiCalendar } from "react-icons/fi";
 
 export default function EmployeeSalary() {
@@ -17,7 +17,7 @@ export default function EmployeeSalary() {
   );
 
   // Get salary statement
-  const salaryStatement = getSalaryStatement(user?.employeeId, selectedMonth, selectedYear);
+  const salaryStatement = getSalaryStatementReport(user?.employeeId, selectedYear);
 
   const formatCurrency = (amount) => {
     return `₹${amount.toLocaleString("en-IN", {
