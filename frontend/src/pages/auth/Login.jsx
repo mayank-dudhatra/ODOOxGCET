@@ -30,14 +30,8 @@ export default function Login() {
       localStorage.setItem("token", JSON.stringify(response.data.user));
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      // Redirect based on role
-      if (response.data.user.role === "admin") {
-        navigate("/admin/dashboard");
-      } else if (response.data.user.role === "hr") {
-        navigate("/hr/dashboard");
-      } else {
-        navigate("/employee/dashboard");
-      }
+      // Navigate to shared dashboard (handles role-based content)
+      navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
     } finally {
