@@ -2,11 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import { FiClock, FiCheck, FiX, FiCalendar, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
-import {
-  getTodayAttendance,
-  getMonthlyAttendance,
-  getAttendanceSummary,
-} from "../../services/dummyData";
+import api from "../../services/api";
 
 export default function Attendance() {
   const { user } = useAuth();
@@ -37,7 +33,7 @@ export default function Attendance() {
     attendancePercentage: 0,
   });
 
-  // Fetch attendance data on mount
+  // Fetch attendance data on mount and after check-in/out
   useEffect(() => {
     fetchAttendanceData();
   }, []);
@@ -263,8 +259,12 @@ export default function Attendance() {
               </div>
               <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                 <p className="text-xs font-medium text-gray-600 mb-1">Check-In</p>
-                <p className="text-2xl font-bold text-green-600">{todayAttendance.checkInTime}</p>
-                <p className="text-xs text-gray-500 mt-2">On time</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {todayAttendance.checkInTime || "—"}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  {todayAttendance.checkInTime ? "Marked" : "Not marked yet"}
+                </p>
               </div>
               <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
                 <p className="text-xs font-medium text-gray-600 mb-1">Check-Out</p>

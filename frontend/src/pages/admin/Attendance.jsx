@@ -11,6 +11,7 @@ import {
   FiClock,
   FiXCircle,
   FiEdit2,
+  FiRefreshCw,
 } from "react-icons/fi";
 import api from "../../services/api";
 
@@ -38,6 +39,13 @@ export default function AdminAttendance() {
   // Fetch attendance data
   useEffect(() => {
     fetchAttendanceData();
+    
+    // Auto-refresh every 30 seconds to show real-time updates
+    const interval = setInterval(() => {
+      fetchAttendanceData();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [filterDate]);
 
   const fetchAttendanceData = async () => {
@@ -126,10 +134,20 @@ export default function AdminAttendance() {
                 {user?.role === "admin" ? "Track and manage all employees' attendance" : "View all employees' attendance"}
               </p>
             </div>
-            <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
-              <FiDownload className="w-5 h-5" />
-              Export Report
-            </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={fetchAttendanceData}
+                disabled={loading}
+                className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition"
+              >
+                <FiRefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+              <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                <FiDownload className="w-5 h-5" />
+                Export Report
+              </button>
+            </div>
           </div>
         </div>
 
