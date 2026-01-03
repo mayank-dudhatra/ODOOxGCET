@@ -6,6 +6,7 @@ import {
   getAllLeaves,
   approveLeave,
   rejectLeave,
+  downloadDocument,
 } from "../controllers/leave.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -29,6 +30,7 @@ const upload = multer({
 router.post("/apply", authMiddleware, upload.single("document"), applyLeave);
 router.get("/my", authMiddleware, getMyLeaves);
 router.get("/all", authMiddleware, getAllLeaves);
+router.get("/:id/document", authMiddleware, downloadDocument);
 router.put("/:id/approve", authMiddleware, approveLeave);
 router.put("/:id/reject", authMiddleware, rejectLeave);
 

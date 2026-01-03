@@ -40,6 +40,7 @@ export default function Leave() {
       try {
         setLoading(true);
         const response = await api.get("/leave/my");
+        console.log("Leave data received:", response.data);
         setLeaveBalance(response.data.leaveBalance);
         setLeaveRequests(response.data.leaveRequests);
         setError("");
@@ -54,6 +55,24 @@ export default function Leave() {
     if (user) {
       fetchLeaveData();
     }
+  }, [user]);
+
+  // Auto-refresh every 30 seconds to stay in sync
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await api.get("/leave/my");
+        console.log("Auto-refresh - Leave data:", response.data);
+        setLeaveBalance(response.data.leaveBalance);
+        setLeaveRequests(response.data.leaveRequests);
+      } catch (err) {
+        console.error("Auto-refresh error:", err);
+      }
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
   }, [user]);
 
   const getStatusBadgeColor = (status) => {
@@ -179,33 +198,37 @@ export default function Leave() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Leave Types Breakdown</h2>
             <div className="space-y-3">
-              {leaveBalance.leaveTypes.map((leave, idx) => (
-                <div key={idx} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{leave.type}</p>
-                    <div className="mt-2 flex gap-4 text-sm">
-                      <span className="text-gray-600">
-                        Total: <span className="font-semibold text-gray-900">{leave.total}</span>
-                      </span>
-                      <span className="text-gray-600">
-                        Used: <span className="font-semibold text-orange-600">{leave.used}</span>
-                      </span>
-                      <span className="text-gray-600">
-                        Remaining:{" "}
-                        <span className="font-semibold text-green-600">{leave.remaining}</span>
-                      </span>
+              {leaveBalance.leaveTypes && leaveBalance.leaveTypes.length > 0 ? (
+                leaveBalance.leaveTypes.map((leave, idx) => (
+                  <div key={idx} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{leave.type}</p>
+                      <div className="mt-2 flex gap-4 text-sm">
+                        <span className="text-gray-600">
+                          Total: <span className="font-semibold text-gray-900">{leave.total}</span>
+                        </span>
+                        <span className="text-gray-600">
+                          Used: <span className="font-semibold text-orange-600">{leave.used}</span>
+                        </span>
+                        <span className="text-gray-600">
+                          Remaining:{" "}
+                          <span className="font-semibold text-green-600">{leave.remaining}</span>
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-32 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full"
+                        style={{
+                          width: `${(leave.used / leave.total) * 100}%`,
+                        }}
+                      ></div>
                     </div>
                   </div>
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full"
-                      style={{
-                        width: `${(leave.used / leave.total) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-gray-500 py-4">No leave types configured</p>
+              )}
             </div>
           </div>
 
@@ -213,7 +236,8 @@ export default function Leave() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Leave Requests</h2>
             <div className="space-y-3">
-              {leaveRequests.map((request) => (
+              {leaveRequests && leaveRequests.length > 0 ? (
+                leaveRequests.map((request) => (
                 <div
                   key={request.id}
                   className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition"
@@ -301,7 +325,13 @@ export default function Leave() {
                     </div>
                   )}
                 </div>
-              ))}
+              ))
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No leave requests yet</p>
+                  <p className="text-sm text-gray-400 mt-1">Click "Apply Leave" to submit your first request</p>
+                </div>
+              )}
             </div>
           </div>
             </>
