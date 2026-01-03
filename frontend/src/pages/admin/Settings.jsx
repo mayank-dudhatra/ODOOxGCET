@@ -4,37 +4,37 @@ import Sidebar from "../../components/Sidebar";
 import { FiEdit2, FiSave, FiX, FiCamera, FiMail, FiPhone, FiMapPin, FiUser, FiLock, FiSettings } from "react-icons/fi";
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user } = useAuth(); // Access real login data from AuthContext
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState(user?.role === "admin" ? "company" : "holidays");
 
-  // Company Information State
+  // Company Information State - Mapping to real context data
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [companyData, setCompanyData] = useState({
-    name: "WorkZen",
-    email: "admin@workzen.com",
-    phone: "+1234567890",
-    address: "123 Main Street, City, State",
-    website: "www.workzen.com",
-    taxId: "TAX123456789",
-    registrationNumber: "REG987654321",
+    name: user?.companyName || "", 
+    email: user?.companyEmail || "",
+    phone: user?.companyPhone || "",
+    address: user?.address || "",
+    website: user?.website || "",
+    taxId: user?.taxId || "",
+    registrationNumber: user?.registrationNumber || "",
   });
 
-  // Personal Information State
+  // Personal Information State - Mapping to real login details
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
   const [personalData, setPersonalData] = useState({
-    employeeId: "WOJODO20230001",
-    firstName: "John",
-    lastName: "Doe",
-    email: "admin@workzen.com",
-    phone: "+1234567890",
-    dateOfBirth: "1989-12-31",
-    gender: "Male",
-    nationality: "Indian",
-    address: "123 Main Street, City, State",
-    city: "Mumbai",
-    state: "Maharashtra",
-    zipCode: "400001",
+    employeeId: user?.loginId || "", 
+    firstName: user?.name?.split(" ")[0] || "",
+    lastName: user?.name?.split(" ")[1] || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    dateOfBirth: user?.dateOfBirth || "",
+    gender: user?.gender || "",
+    nationality: user?.nationality || "",
+    address: user?.address || "",
+    city: user?.city || "",
+    state: user?.state || "",
+    zipCode: user?.zipCode || "",
   });
 
   // Security State
@@ -48,7 +48,7 @@ export default function Settings() {
   // System Settings State
   const [isEditingSystem, setIsEditingSystem] = useState(false);
   const [systemData, setSystemData] = useState({
-    companyName: "WorkZen",
+    companyName: user?.companyName || "",
     dateFormat: "DD/MM/YYYY",
     timeFormat: "24-hour",
     currency: "INR",
@@ -110,7 +110,7 @@ export default function Settings() {
         <div className="bg-white shadow-sm p-6 sticky top-0 z-30">
           <h1 className="text-3xl font-bold text-gray-900">Admin Settings</h1>
           <p className="text-gray-600 text-sm mt-1">
-            Manage your company information, personal details, and system settings
+            Manage information for {companyData.name || "your organization"}
           </p>
         </div>
 
@@ -179,7 +179,7 @@ export default function Settings() {
                 <div className="mb-6 flex items-center gap-4">
                   <div className="relative">
                     <div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-3xl">
-                      {companyData.name.substring(0, 2).toUpperCase()}
+                      {(companyData.name || "C").substring(0, 2).toUpperCase()}
                     </div>
                     {isEditingCompany && (
                       <button className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition">
@@ -188,7 +188,7 @@ export default function Settings() {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{companyData.name}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{companyData.name || "Company Name"}</h3>
                     <p className="text-sm text-gray-600">Company Logo</p>
                   </div>
                 </div>
@@ -202,6 +202,7 @@ export default function Settings() {
                     <input
                       type="text"
                       value={companyData.name}
+                      placeholder="Enter company name"
                       onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })}
                       disabled={!isEditingCompany}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
@@ -215,6 +216,7 @@ export default function Settings() {
                     <input
                       type="email"
                       value={companyData.email}
+                      placeholder="Enter company email"
                       onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })}
                       disabled={!isEditingCompany}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
@@ -228,6 +230,7 @@ export default function Settings() {
                     <input
                       type="tel"
                       value={companyData.phone}
+                      placeholder="Enter company phone"
                       onChange={(e) => setCompanyData({ ...companyData, phone: e.target.value })}
                       disabled={!isEditingCompany}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
@@ -241,6 +244,7 @@ export default function Settings() {
                     <input
                       type="text"
                       value={companyData.website}
+                      placeholder="e.g., www.company.com"
                       onChange={(e) => setCompanyData({ ...companyData, website: e.target.value })}
                       disabled={!isEditingCompany}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
@@ -253,6 +257,7 @@ export default function Settings() {
                     </label>
                     <textarea
                       value={companyData.address}
+                      placeholder="Enter full business address"
                       onChange={(e) => setCompanyData({ ...companyData, address: e.target.value })}
                       disabled={!isEditingCompany}
                       rows="3"
@@ -267,6 +272,7 @@ export default function Settings() {
                     <input
                       type="text"
                       value={companyData.taxId}
+                      placeholder="Enter Tax/GST ID"
                       onChange={(e) => setCompanyData({ ...companyData, taxId: e.target.value })}
                       disabled={!isEditingCompany}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
@@ -280,6 +286,7 @@ export default function Settings() {
                     <input
                       type="text"
                       value={companyData.registrationNumber}
+                      placeholder="Enter business registration number"
                       onChange={(e) =>
                         setCompanyData({ ...companyData, registrationNumber: e.target.value })
                       }
@@ -333,8 +340,8 @@ export default function Settings() {
                 <div className="mb-6 flex items-center gap-4">
                   <div className="relative">
                     <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-3xl">
-                      {personalData.firstName.charAt(0)}
-                      {personalData.lastName.charAt(0)}
+                      {personalData.firstName.charAt(0) || "U"}
+                      {personalData.lastName.charAt(0) || ""}
                     </div>
                     {isEditingPersonal && (
                       <button className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition">
@@ -370,6 +377,7 @@ export default function Settings() {
                     <input
                       type="email"
                       value={personalData.email}
+                      placeholder="your@email.com"
                       onChange={(e) =>
                         setPersonalData({ ...personalData, email: e.target.value })
                       }
@@ -385,6 +393,7 @@ export default function Settings() {
                     <input
                       type="text"
                       value={personalData.firstName}
+                      placeholder="First name"
                       onChange={(e) =>
                         setPersonalData({ ...personalData, firstName: e.target.value })
                       }
@@ -400,6 +409,7 @@ export default function Settings() {
                     <input
                       type="text"
                       value={personalData.lastName}
+                      placeholder="Last name"
                       onChange={(e) =>
                         setPersonalData({ ...personalData, lastName: e.target.value })
                       }
@@ -413,6 +423,7 @@ export default function Settings() {
                     <input
                       type="tel"
                       value={personalData.phone}
+                      placeholder="Phone number"
                       onChange={(e) =>
                         setPersonalData({ ...personalData, phone: e.target.value })
                       }
@@ -446,6 +457,7 @@ export default function Settings() {
                       disabled={!isEditingPersonal}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
                     >
+                      <option value="">Select Gender</option>
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
                       <option value="Other">Other</option>
@@ -459,6 +471,7 @@ export default function Settings() {
                     <input
                       type="text"
                       value={personalData.nationality}
+                      placeholder="Nationality"
                       onChange={(e) =>
                         setPersonalData({ ...personalData, nationality: e.target.value })
                       }
@@ -473,6 +486,7 @@ export default function Settings() {
                     </label>
                     <textarea
                       value={personalData.address}
+                      placeholder="Personal address"
                       onChange={(e) =>
                         setPersonalData({ ...personalData, address: e.target.value })
                       }
@@ -487,6 +501,7 @@ export default function Settings() {
                     <input
                       type="text"
                       value={personalData.city}
+                      placeholder="City"
                       onChange={(e) => setPersonalData({ ...personalData, city: e.target.value })}
                       disabled={!isEditingPersonal}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
@@ -498,6 +513,7 @@ export default function Settings() {
                     <input
                       type="text"
                       value={personalData.state}
+                      placeholder="State"
                       onChange={(e) =>
                         setPersonalData({ ...personalData, state: e.target.value })
                       }
@@ -513,6 +529,7 @@ export default function Settings() {
                     <input
                       type="text"
                       value={personalData.zipCode}
+                      placeholder="Zip Code"
                       onChange={(e) =>
                         setPersonalData({ ...personalData, zipCode: e.target.value })
                       }
