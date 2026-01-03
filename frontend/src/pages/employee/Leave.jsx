@@ -388,11 +388,14 @@ export default function Leave() {
                     },
                   });
 
-                  // Add new leave to the list
-                  setLeaveRequests([response.data.leave, ...leaveRequests]);
+                  // Refresh leave data from backend to update balance
+                  const updatedLeaveData = await api.get("/leave/my");
+                  setLeaveBalance(updatedLeaveData.data.leaveBalance);
+                  setLeaveRequests(updatedLeaveData.data.leaveRequests);
 
                   setShowModal(false);
                   setFormData({ leaveType: "Casual Leave", startDate: "", endDate: "", reason: "", document: null });
+                  alert("Leave request submitted successfully!");
                 } catch (err) {
                   alert(err.response?.data?.error || "Failed to submit leave request");
                 }

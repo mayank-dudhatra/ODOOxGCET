@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { hasPermission } from "../config/permissions";
 import {
   FiHome,
   FiUsers,
@@ -16,7 +17,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: propSetSidebarOpen }) {
   const [internalSidebarOpen, setInternalSidebarOpen] = useState(true);
-  const { user, logout } = useAuth();
+  const { user, logout, permissions } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -32,56 +33,117 @@ export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: 
     return "/dashboard";
   };
 
-  // Role-based menu items
+  // Permission-based menu items (NOT role-based)
   const getMenuItems = () => {
     const baseItems = [{ icon: FiHome, label: "Dashboard", path: getHomePath() }];
 
-    if (user?.role === "admin") {
-      return [
-        ...baseItems,
-        { icon: FiUsers, label: "Employees", path: "/admin/employees" },
-        { icon: FiCalendar, label: "Attendance", path: "/admin/attendance" },
-        { icon: FiClock, label: "Time Off", path: "/admin/time-off" },
-        { icon: FiDollarSign, label: "Payroll", path: "/admin/payroll" },
-        { icon: FiBarChart2, label: "Salary Management", path: "/admin/salary-management" },
-        { icon: FiFileText, label: "Reports", path: "/admin/reports" },
-        { icon: FiSettings, label: "Settings", path: "/admin/settings" },
-      ];
+    const menuItems = [];
+
+    // Employees section - Admin and HR can see this
+    if (hasPermission(user?.role, "viewEmployees")) {
+      menuItems.push({
+        icon: FiUsers,
+        label: "Employees",
+        path: user?.role === "admin" ? "/admin/employees" : "/hr/employees",
+      });
     }
 
-    if (user?.role === "hr") {
-      return [
-        ...baseItems,
-        { icon: FiUsers, label: "Employees", path: "/hr/employees" },
-        { icon: FiCalendar, label: "Attendance", path: "/hr/attendance" },
-        { icon: FiClock, label: "Time Off", path: "/hr/time-off" },
-        { icon: FiDollarSign, label: "Payroll", path: "/hr/payroll" },
-        { icon: FiFileText, label: "Reports", path: "/hr/reports" },
-        { icon: FiSettings, label: "Settings", path: "/admin/settings" },
-      ];
+    // Attendance section - Admin, HR, and Manager can see this
+    if (hasPermission(user?.role, "viewAttendance")) {
+      menuItems.push({
+        icon: FiCalendar,
+        label: "Attendance",
+        path: 
+          user?.role === "admin" ? "/admin/attendance" :
+          user?.role === "hr" ? "/hr/attendance" :
+          user?.role === "manager" ? "/manager/attendance" :
+          "/employee/attendance",
+      });
     }
 
+    // Leave/Time Off section - All roles can see this
+    if (hasPermission(user?.role, "viewLeaves")) {
+      menuItems.push({
+        icon: FiClock,
+        label: user?.role === "employee" ? "Time Off" : "Time Off",
+        path: 
+          user?.role === "admin" ? "/admin/time-off" :
+          user?.role === "hr" ? "/hr/time-off" :
+          user?.role === "manager" ? "/manager/approvals" :
+          "/employee/leave",
+      });
+    }
+
+    // Payroll section - Admin and HR can see this
+    if (hasPermission(user?.role, "viewPayroll")) {
+      menuItems.push({
+        icon: FiDollarSign,
+        label: user?.role === "employee" ? "Salary" : "Payroll",
+        path: 
+          user?.role === "admin" ? "/admin/payroll" :
+          user?.role === "hr" ? "/hr/payroll" :
+          user?.role === "employee" ? "/employee/salary" :
+          "/manager/salary",
+      });
+    }
+
+    // Salary Management - Admin only
+    if (user?.role === "admin" && hasPermission(user?.role, "manageSalaryStructure")) {
+      menuItems.push({
+        icon: FiDollarSign,
+        label: "Salary Management",
+        path: "/admin/salary-management",
+      });
+    }
+
+    // Reports - Admin, HR, and Manager can see this
+    if (hasPermission(user?.role, "viewReports")) {
+      menuItems.push({
+        icon: FiFileText,
+        label: "Reports",
+        path: 
+          user?.role === "admin" ? "/admin/reports" :
+          user?.role === "hr" ? "/hr/reports" :
+          "/manager/reports",
+      });
+    }
+
+    // Employee Profile - Employee only
     if (user?.role === "employee") {
-      return [
-        ...baseItems,
-        { icon: FiCalendar, label: "Attendance", path: "/employee/attendance" },
-        { icon: FiClock, label: "Time Off", path: "/employee/leave" },
-        { icon: FiDollarSign, label: "Salary", path: "/employee/salary" },
-        { icon: FiUser, label: "Profile", path: "/employee/profile" },
-        { icon: FiSettings, label: "Settings", path: "/employee/settings" },
-      ];
+      menuItems.push({
+        icon: FiUser,
+        label: "Profile",
+        path: "/employee/profile",
+      });
     }
 
-    if (user?.role === "manager") {
-      return [
-        ...baseItems,
-        { icon: FiUsers, label: "My Team", path: "/manager/team" },
-        { icon: FiCalendar, label: "Team Attendance", path: "/manager/attendance" },
-        { icon: FiClock, label: "Approve Leave", path: "/manager/approvals" },
-      ];
+    // Settings - Show based on permissions
+    // Employees see their own settings
+    if (user?.role === "employee") {
+      menuItems.push({
+        icon: FiSettings,
+        label: "Settings",
+        path: "/employee/settings",
+      });
+    }
+    // HR sees HR settings (not full admin settings)
+    else if (user?.role === "hr") {
+      menuItems.push({
+        icon: FiSettings,
+        label: "Settings",
+        path: "/hr/settings",
+      });
+    }
+    // Admin sees full admin settings
+    else if (user?.role === "admin" && hasPermission(user?.role, "manageCompanySettings")) {
+      menuItems.push({
+        icon: FiSettings,
+        label: "Settings",
+        path: "/admin/settings",
+      });
     }
 
-    return baseItems;
+    return [...baseItems, ...menuItems];
   };
 
   const menuItems = getMenuItems();
