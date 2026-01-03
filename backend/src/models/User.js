@@ -34,9 +34,22 @@ const userSchema = new mongoose.Schema(
     },
     department: String,
     position: String,
+    joinDate: {
+      type: String, // Matching the "YYYY-MM-DD" format from your frontend
+      default: () => new Date().toISOString().split("T")[0]
+    },
+    status: {
+      type: String,
+      enum: ["Active", "Inactive"],
+      default: "Active", // Matches your frontend status colors
+    },
+    salary: {
+      type: Number,
+      required: true,
+    },
     isFirstLogin: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     isActive: {
       type: Boolean,

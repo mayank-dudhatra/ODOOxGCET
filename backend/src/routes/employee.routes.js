@@ -1,9 +1,11 @@
 import express from "express";
-import { getProfile, updateProfile } from "../controllers/employee.controller.js";
+import { createEmployee, getAllEmployees } from "../controllers/employee.controller.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
+router.use(authMiddleware);
 
-router.get("/me", getProfile);
-router.put("/me", updateProfile);
+router.post("/create", createEmployee); // POST /api/employee/create
+router.get("/all", getAllEmployees);    // GET /api/employee/all
 
 export default router;

@@ -24,10 +24,10 @@ export default function Login() {
     setError("");
 
     try {
-      const response = await api.post("/company/login", formData);
+      const response = await api.post("/auth/login", formData);
 
-      // Store user data in localStorage
-      localStorage.setItem("token", JSON.stringify(response.data.user));
+      // Store token and user data in localStorage
+      localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
       // Navigate to shared dashboard (handles role-based content)
