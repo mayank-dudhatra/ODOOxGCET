@@ -14,6 +14,11 @@ import EmployeeProfile from "./pages/employee/Profile";
 // Admin Routes
 import AdminEmployees from "./pages/admin/Employees";
 import AdminAttendance from "./pages/admin/Attendance";
+import AdminTimeOff from "./pages/admin/TimeOff";
+import AdminPayroll from "./pages/admin/Payroll";
+import AdminPayslipDetails from "./pages/admin/PayslipDetails";
+import AdminSalaryManagement from "./pages/admin/SalaryManagement";
+import AdminSalaryDetails from "./pages/admin/SalaryDetails";
 
 import "./index.css";
 
@@ -51,6 +56,46 @@ function App() {
             element={
               <ProtectedRoute requiredRole="admin">
                 <AdminAttendance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/time-off"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminTimeOff />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/payroll"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminPayroll />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/payroll/:employeeId/:month/:year"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminPayslipDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/salary-management"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminSalaryManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/salary-management/:employeeId"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminSalaryDetails />
               </ProtectedRoute>
             }
           />

@@ -32,7 +32,7 @@ export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: 
         ...baseItems,
         { icon: FiUsers, label: "Employees", path: "/admin/employees" },
         { icon: FiCalendar, label: "Attendance", path: "/admin/attendance" },
-        { icon: FiClock, label: "Time Off", path: "/admin/timeoff" },
+        { icon: FiClock, label: "Time Off", path: "/admin/time-off" },
         { icon: FiDollarSign, label: "Payroll", path: "/admin/payroll" },
         { icon: FiBarChart2, label: "Salary Management", path: "/admin/salary" },
         { icon: FiBarChart2, label: "Reports", path: "/admin/reports" },

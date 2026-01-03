@@ -389,3 +389,421 @@ export const getDailyAttendanceSummary = () => {
     halfDay: todayRecords.filter((a) => a.status === "Half Day").length,
   };
 };
+
+// ============ TIME OFF / LEAVE MANAGEMENT ============
+
+export const getAllLeaveRequests = () => {
+  return [
+    {
+      id: "LR001",
+      employeeId: "EMP001",
+      employeeName: "Arjun Sharma",
+      department: "Engineering",
+      leaveType: "Paid Leave",
+      startDate: "2026-01-10",
+      endDate: "2026-01-12",
+      days: 3,
+      reason: "Personal work",
+      status: "Pending",
+      appliedOn: "2026-01-03",
+      approvedBy: null,
+    },
+    {
+      id: "LR002",
+      employeeId: "EMP002",
+      employeeName: "Priya Verma",
+      department: "HR",
+      leaveType: "Sick Leave",
+      startDate: "2026-01-08",
+      endDate: "2026-01-08",
+      days: 1,
+      reason: "Medical appointment",
+      status: "Approved",
+      appliedOn: "2026-01-07",
+      approvedBy: "John Doe",
+    },
+    {
+      id: "LR003",
+      employeeId: "EMP003",
+      employeeName: "Rajesh Kumar",
+      department: "Engineering",
+      leaveType: "Paid Leave",
+      startDate: "2026-01-15",
+      endDate: "2026-01-20",
+      days: 6,
+      reason: "Vacation",
+      status: "Approved",
+      appliedOn: "2025-12-20",
+      approvedBy: "John Doe",
+    },
+    {
+      id: "LR004",
+      employeeId: "EMP004",
+      employeeName: "Anjali Singh",
+      department: "Marketing",
+      leaveType: "Paid Leave",
+      startDate: "2026-01-05",
+      endDate: "2026-01-07",
+      days: 3,
+      reason: "Family event",
+      status: "Rejected",
+      appliedOn: "2026-01-02",
+      approvedBy: "John Doe",
+    },
+    {
+      id: "LR005",
+      employeeId: "EMP005",
+      employeeName: "Vikram Patel",
+      department: "Sales",
+      leaveType: "Unpaid Leave",
+      startDate: "2026-01-22",
+      endDate: "2026-01-25",
+      days: 4,
+      reason: "Personal reasons",
+      status: "Pending",
+      appliedOn: "2025-12-28",
+      approvedBy: null,
+    },
+    {
+      id: "LR006",
+      employeeId: "EMP001",
+      employeeName: "Arjun Sharma",
+      department: "Engineering",
+      leaveType: "Sick Leave",
+      startDate: "2025-12-30",
+      endDate: "2025-12-31",
+      days: 2,
+      reason: "Fever",
+      status: "Approved",
+      appliedOn: "2025-12-29",
+      approvedBy: "John Doe",
+    },
+  ];
+};
+
+export const getLeaveRequestsSummary = () => {
+  const requests = getAllLeaveRequests();
+  return {
+    total: requests.length,
+    pending: requests.filter((r) => r.status === "Pending").length,
+    approved: requests.filter((r) => r.status === "Approved").length,
+    rejected: requests.filter((r) => r.status === "Rejected").length,
+  };
+};
+
+export const getEmployeeLeaveBalance = (employeeId) => {
+  const leaveTypes = {
+    "Paid Leave": 20,
+    "Sick Leave": 10,
+    "Casual Leave": 5,
+    "Unpaid Leave": -1, // Unlimited
+  };
+
+  const allRequests = getAllLeaveRequests();
+  const employeeRequests = allRequests.filter(
+    (r) => r.employeeId === employeeId && r.status === "Approved"
+  );
+
+  const balance = {};
+  Object.keys(leaveTypes).forEach((type) => {
+    const usedDays = employeeRequests
+      .filter((r) => r.leaveType === type)
+      .reduce((sum, r) => sum + r.days, 0);
+    balance[type] = leaveTypes[type] === -1 ? -1 : leaveTypes[type] - usedDays;
+  });
+
+  return balance;
+};
+
+export const updateLeaveRequestStatus = (requestId, status, approvedBy) => {
+  // This would be called after API integration
+  // For now, returns success
+  return {
+    success: true,
+    message: `Leave request ${status.toLowerCase()} successfully`,
+    updatedId: requestId,
+  };
+};
+
+// ============ PAYROLL MANAGEMENT ============
+
+export const getPayrollPeriods = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  
+  return [
+    { month: "January", year: 2025, startDate: "Jan 01, 2025", endDate: "Jan 31, 2025", payDate: "Feb 05, 2025" },
+    { month: "February", year: 2025, startDate: "Feb 01, 2025", endDate: "Feb 28, 2025", payDate: "Mar 05, 2025" },
+    { month: "October", year: 2025, startDate: "Oct 31, 2025", endDate: "Nov 29, 2025", payDate: "Dec 04, 2025" },
+    { month: "November", year: 2025, startDate: "Nov 01, 2025", endDate: "Nov 30, 2025", payDate: "Dec 05, 2025" },
+    { month: "December", year: 2025, startDate: "Dec 01, 2025", endDate: "Dec 31, 2025", payDate: "Jan 10, 2026" },
+  ];
+};
+
+export const getPayrunDetails = (month, year) => {
+  // Find the matching payroll period or create a generic one
+  const periods = getPayrollPeriods();
+  let period = periods.find((p) => p.month === month && p.year === year);
+  
+  if (!period) {
+    // Generate period for any month/year combination
+    const monthIndex = new Date(`${month} 1, ${year}`).getMonth();
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    period = {
+      month: month,
+      year: year,
+      startDate: `${month.slice(0, 3)} 01, ${year}`,
+      endDate: `${month.slice(0, 3)} ${daysInMonth}, ${year}`,
+      payDate: `${daysInMonth === 31 ? "Next" : "Same"} Month 05, ${year}`
+    };
+  }
+
+  return {
+    month,
+    year,
+    period: `${period.startDate} - ${period.endDate}`,
+    payDate: period.payDate,
+    totalEmployees: 5,
+    employerCost: 5624000,
+    grossSalary: 5624000,
+    netSalary: 5195600,
+    status: "draft",
+    description: "The payslip of an individual employee is generated on the basis of attendance of that employee in a particular month. Done status show once any payrun/payslip has been validated."
+  };
+};
+
+export const getPayslips = (month = "October", year = 2025) => {
+  const employees = getAllEmployees();
+  
+  // Generate payslips for any month/year combination
+  const payslips = employees.map((emp, idx) => {
+    const baseSalaries = [50000, 45000, 41000, 43000, 28000];
+    const grossSalaries = [95000, 85500, 77900, 82600, 56000];
+    const netWages = [78900, 79000, 71960, 76840, 50000];
+    const employerCosts = [95000, 85500, 77900, 82600, 56000];
+    
+    const monthShort = month.slice(0, 3);
+    
+    return {
+      id: `PS${String(idx + 1).padStart(3, "0")}_${year}_${month}`,
+      employeeId: emp.id,
+      employeeName: emp.name,
+      period: `${monthShort} 01, ${year} - ${monthShort} 28, ${year}`,
+      payDate: `${monthShort} 04, ${year}`,
+      employerCost: employerCosts[idx],
+      basicWage: baseSalaries[idx],
+      grossWage: grossSalaries[idx],
+      netWage: netWages[idx],
+      status: "draft",
+    };
+  });
+  
+  return payslips;
+};
+
+export const getPayrollSummary = (month = "October", year = 2025) => {
+  const payslips = getPayslips(month, year);
+  
+  return {
+    totalPayslips: payslips.length,
+    totalEmployerCost: payslips.reduce((sum, p) => sum + p.employerCost, 0),
+    totalGrossWage: payslips.reduce((sum, p) => sum + p.grossWage, 0),
+    totalNetWage: payslips.reduce((sum, p) => sum + p.netWage, 0),
+  };
+};
+
+export const getPayslipDetailsByEmployeeAndPeriod = (employeeId, month, year) => {
+  // Capitalize month if it's lowercase (from URL parameters)
+  const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1).toLowerCase();
+  
+  const payslips = getPayslips(capitalizedMonth, year);
+  const payslip = payslips.find((p) => p.employeeId === employeeId);
+  const employee = getAllEmployees().find((e) => e.id === employeeId);
+  const payrun = getPayrunDetails(capitalizedMonth, year);
+
+  if (!payslip || !employee || !payrun) return null;
+
+  return {
+    ...payslip,
+    employeeDetails: employee,
+    payrunInfo: payrun,
+    salaryStructure: "Updated Structure - " + employee.name.split(" ")[0],
+    workedDays: [
+      {
+        type: "Attendance",
+        days: 5.0,
+        description: "Working days in period",
+        amount: 11363.64,
+      },
+      {
+        type: "Paid Time Off",
+        days: 0.0,
+        description: "Paid leaves in period",
+        amount: 0.0,
+      },
+    ],
+    salaryComponents: [
+      { name: "Basic Salary", amount: 28000, percentage: 35 },
+      { name: "HRA", amount: 10000, percentage: 12.5 },
+      { name: "Dearness Allowance", amount: 8000, percentage: 10 },
+      { name: "Conveyance Allowance", amount: 4000, percentage: 5 },
+      { name: "Medical Allowance", amount: 3000, percentage: 3.75 },
+      { name: "Other Allowances", amount: 5000, percentage: 6.25 },
+      { name: "Performance Bonus", amount: 8000, percentage: 10 },
+      { name: "Provident Fund Deduction", amount: -2800, percentage: -3.5 },
+      { name: "Income Tax", amount: -6600, percentage: -8.25 },
+      { name: "Professional Tax", amount: -600, percentage: -0.75 },
+    ],
+  };
+};
+
+export const updatePayslipDetails = (employeeId, month, year, updatedData) => {
+  // This would be called after API integration
+  return {
+    success: true,
+    message: "Payslip updated successfully",
+    payslipId: `PS_${employeeId}_${month}_${year}`,
+    data: updatedData,
+  };
+};
+
+// ============ SALARY MANAGEMENT ============
+
+export const getAllEmployeeSalaries = () => {
+  return [
+    {
+      employeeId: "WORKRJA2025001",
+      name: "krishnapal jadejaaa",
+      email: "jadejakrishnapal04@gmail.com",
+      department: "tech",
+      position: "sde",
+      monthWage: 1000010,
+      yearlyWage: 12001200,
+    },
+    {
+      employeeId: "WOJEMA2023008",
+      name: "Jennifer Martinez",
+      email: "jennifer@workzen.com",
+      department: "Finance",
+      position: "Financial Analyst",
+      monthWage: 780000,
+      yearlyWage: 9360000,
+    },
+    {
+      employeeId: "WOROTA2023007",
+      name: "Robert Taylor",
+      email: "robert@workzen.com",
+      department: "Sales",
+      position: "Sales Executive",
+      monthWage: 700000,
+      yearlyWage: 8400000,
+    },
+    {
+      employeeId: "WOLIAN2023006",
+      name: "Lisa Anderson",
+      email: "lisa@workzen.com",
+      department: "Marketing",
+      position: "Marketing Manager",
+      monthWage: 800000,
+      yearlyWage: 9600000,
+    },
+    {
+      employeeId: "WODAWI2023005",
+      name: "David Wilson",
+      email: "david@workzen.com",
+      department: "Engineering",
+      position: "Senior Software Engineer",
+      monthWage: 950000,
+      yearlyWage: 11400000,
+    },
+    {
+      employeeId: "WOEMDA2023004",
+      name: "Emily Davis",
+      email: "employee@workzen.com",
+      department: "Engineering",
+      position: "Software Engineer",
+      monthWage: 750000,
+      yearlyWage: 9000000,
+    },
+    {
+      employeeId: "WOJEMI2023003",
+      name: "Jessica Miller",
+      email: "payroll@workzen.com",
+      department: "Finance",
+      position: "Payroll Officer",
+      monthWage: 820000,
+      yearlyWage: 9840000,
+    },
+  ];
+};
+
+export const getEmployeeSalaryDetails = (employeeId) => {
+  const allSalaries = getAllEmployeeSalaries();
+  const salary = allSalaries.find((s) => s.employeeId === employeeId);
+
+  if (!salary) return null;
+
+  return {
+    ...salary,
+    workingDaysPerWeek: 5,
+    breakTime: "1 Hour",
+    salaryComponents: [
+      {
+        name: "Basic Salary",
+        amount: 500050,
+        percentage: 50.0,
+      },
+      {
+        name: "House Rent Allowance (HRA)",
+        amount: 250025,
+        percentage: 25.0,
+      },
+      {
+        name: "Standard Allowance",
+        amount: 166717,
+        percentage: 16.67,
+      },
+      {
+        name: "Performance Bonus",
+        amount: 41654,
+        percentage: 4.17,
+      },
+      {
+        name: "Leave Travel Allowance (LTA)",
+        amount: 41654,
+        percentage: 4.16,
+      },
+      {
+        name: "Fixed Allowance",
+        amount: 0,
+        percentage: 0.0,
+      },
+    ],
+    pfContribution: {
+      employee: 60006,
+      percentage: 12.0,
+    },
+    taxDeductions: [
+      {
+        name: "Professional Tax",
+        amount: 200,
+      },
+      {
+        name: "Income Tax",
+        amount: 60000,
+      },
+    ],
+    grossSalary: 1000100,
+    netSalary: 938094,
+  };
+};
+
+export const updateEmployeeSalaryDetails = (employeeId, updatedData) => {
+  return {
+    success: true,
+    message: "Salary information updated successfully",
+    employeeId: employeeId,
+    data: updatedData,
+  };
+};
