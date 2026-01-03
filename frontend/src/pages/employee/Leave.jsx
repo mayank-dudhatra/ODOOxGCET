@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import {
@@ -10,22 +10,51 @@ import {
   FiChevronDown,
   FiX,
 } from "react-icons/fi";
-import { getLeaveBalance, getLeaveRequests } from "../../services/dummyData";
+import api from "../../services/api";
 
 export default function Leave() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [leaveBalance, setLeaveBalance] = useState({
+    totalLeaves: 18,
+    usedLeaves: 0,
+    remainingLeaves: 18,
+    leaveTypes: [],
+  });
+  const [leaveRequests, setLeaveRequests] = useState([]);
   const [formData, setFormData] = useState({
     leaveType: "Casual Leave",
     startDate: "",
     endDate: "",
     reason: "",
+    document: null,
   });
 
-  const leaveBalance = getLeaveBalance();
-  const leaveRequests = getLeaveRequests();
+  // Fetch leave data
+  useEffect(() => {
+    const fetchLeaveData = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get("/leave/my");
+        setLeaveBalance(response.data.leaveBalance);
+        setLeaveRequests(response.data.leaveRequests);
+        setError("");
+      } catch (err) {
+        setError(err.response?.data?.error || "Failed to load leave data");
+        console.error("Leave fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchLeaveData();
+    }
+  }, [user]);
 
   const getStatusBadgeColor = (status) => {
     switch (status) {
@@ -79,8 +108,23 @@ export default function Leave() {
 
         {/* Content */}
         <div className="p-8">
-          {/* Leave Balance Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p className="mt-4 text-gray-600">Loading leave data...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Leave Balance Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Total Leaves Card */}
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition">
               <div className="flex items-start justify-between mb-4">
@@ -260,6 +304,8 @@ export default function Leave() {
               ))}
             </div>
           </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -278,13 +324,48 @@ export default function Leave() {
             </div>
 
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                alert(
-                  `Leave application submitted!\nType: ${formData.leaveType}\nFrom: ${formData.startDate}\nTo: ${formData.endDate}\nReason: ${formData.reason}`
-                );
-                setShowModal(false);
-                setFormData({ leaveType: "Casual Leave", startDate: "", endDate: "", reason: "" });
+                try {
+                  // Map leave type display name to backend value
+                  const leaveTypeMap = {
+                    "Sick Leave": "sick",
+                    "Casual Leave": "casual",
+                    "Earned Leave": "earned",
+                    "Unpaid Leave": "unpaid",
+                  };
+
+                  // For sick leave, document is required
+                  if (formData.leaveType === "Sick Leave" && !formData.document) {
+                    alert("Document is required for Sick Leave");
+                    return;
+                  }
+
+                  // Create FormData for file upload
+                  const submitData = new FormData();
+                  submitData.append("leaveType", leaveTypeMap[formData.leaveType] || formData.leaveType.toLowerCase());
+                  submitData.append("startDate", formData.startDate);
+                  submitData.append("endDate", formData.endDate);
+                  submitData.append("reason", formData.reason);
+                  
+                  if (formData.document) {
+                    submitData.append("document", formData.document);
+                  }
+
+                  const response = await api.post("/leave/apply", submitData, {
+                    headers: {
+                      "Content-Type": "multipart/form-data",
+                    },
+                  });
+
+                  // Add new leave to the list
+                  setLeaveRequests([response.data.leave, ...leaveRequests]);
+
+                  setShowModal(false);
+                  setFormData({ leaveType: "Casual Leave", startDate: "", endDate: "", reason: "", document: null });
+                } catch (err) {
+                  alert(err.response?.data?.error || "Failed to submit leave request");
+                }
               }}
               className="space-y-4"
             >
@@ -343,6 +424,24 @@ export default function Leave() {
                   rows="3"
                 ></textarea>
               </div>
+
+              {formData.leaveType === "Sick Leave" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Medical Document <span className="text-red-500">*</span>
+                  </label>
+                  <p className="text-xs text-gray-500 mb-2">Upload medical certificate, doctor's note, or prescription (PDF/Image)</p>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => setFormData({ ...formData, document: e.target.files?.[0] || null })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {formData.document && (
+                    <p className="text-xs text-green-600 mt-1">✓ {formData.document.name}</p>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4">
                 <button

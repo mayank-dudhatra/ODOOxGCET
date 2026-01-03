@@ -1,11 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
-import {
-  getAllLeaveRequests,
-  getLeaveRequestsSummary,
-} from "../../services/dummyData";
 import { FiSearch, FiCheck, FiX, FiFilter } from "react-icons/fi";
+import api from "../../services/api";
 
 export default function TimeOff() {
   const { user } = useAuth();
@@ -13,16 +10,45 @@ export default function TimeOff() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterLeaveType, setFilterLeaveType] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [leaveRequests, setLeaveRequests] = useState([]);
 
-  const leaveRequests = getAllLeaveRequests();
-  const summary = getLeaveRequestsSummary();
+  // Fetch leave requests
+  useEffect(() => {
+    const fetchLeaveRequests = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get("/leave/all");
+        setLeaveRequests(response.data);
+        setError("");
+      } catch (err) {
+        setError(err.response?.data?.error || "Failed to load leave requests");
+        console.error("Leave fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchLeaveRequests();
+    }
+  }, [user]);
+
+  // Calculate summary
+  const summary = {
+    total: leaveRequests.length,
+    pending: leaveRequests.filter((r) => r.status === "Pending").length,
+    approved: leaveRequests.filter((r) => r.status === "Approved").length,
+    rejected: leaveRequests.filter((r) => r.status === "Rejected").length,
+  };
 
   // Filter leave requests
   const filteredRequests = leaveRequests.filter((request) => {
     const matchesSearch =
       request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.department.toLowerCase().includes(searchTerm.toLowerCase());
+      (request.department && request.department.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesStatus =
       filterStatus === "all" || request.status === filterStatus;
@@ -54,6 +80,8 @@ export default function TimeOff() {
         return "bg-orange-100 text-orange-800";
       case "Casual Leave":
         return "bg-purple-100 text-purple-800";
+      case "Earned Leave":
+        return "bg-indigo-100 text-indigo-800";
       case "Unpaid Leave":
         return "bg-gray-100 text-gray-800";
       default:
@@ -61,12 +89,26 @@ export default function TimeOff() {
     }
   };
 
-  const handleApprove = (requestId) => {
-    alert(`Leave request ${requestId} approved`);
+  const handleApprove = async (requestId) => {
+    try {
+      await api.put(`/leave/${requestId}/approve`);
+      // Refresh the list
+      const response = await api.get("/leave/all");
+      setLeaveRequests(response.data);
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to approve leave");
+    }
   };
 
-  const handleReject = (requestId) => {
-    alert(`Leave request ${requestId} rejected`);
+  const handleReject = async (requestId) => {
+    try {
+      await api.put(`/leave/${requestId}/reject`);
+      // Refresh the list
+      const response = await api.get("/leave/all");
+      setLeaveRequests(response.data);
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to reject leave");
+    }
   };
 
   return (
@@ -90,6 +132,21 @@ export default function TimeOff() {
 
         {/* Content */}
         <div className="p-6 space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p className="mt-4 text-gray-600">Loading leave requests...</p>
+              </div>
+            </div>
+          ) : (
+            <>
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -194,6 +251,7 @@ export default function TimeOff() {
                   <option value="Paid Leave">Paid Leave</option>
                   <option value="Sick Leave">Sick Leave</option>
                   <option value="Casual Leave">Casual Leave</option>
+                  <option value="Earned Leave">Earned Leave</option>
                   <option value="Unpaid Leave">Unpaid Leave</option>
                 </select>
               </div>
@@ -329,6 +387,8 @@ export default function TimeOff() {
               </tbody>
             </table>
           </div>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -21,6 +21,12 @@ const leaveSchema = new mongoose.Schema(
       required: true,
     },
     reason: String,
+    document: {
+      filename: String,
+      data: Buffer,
+      contentType: String,
+      uploadedAt: Date,
+    },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
