@@ -25,7 +25,7 @@ export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: 
 
   // Role-based menu items
   const getMenuItems = () => {
-    const baseItems = [{ icon: FiHome, label: "Dashboard", path: "/employee/dashboard" }];
+    const baseItems = [{ icon: FiHome, label: "Dashboard", path: "/dashboard" }];
 
     if (user?.role === "admin") {
       return [

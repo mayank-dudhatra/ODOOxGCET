@@ -157,3 +157,128 @@ export const getLeaveRequests = () => {
     },
   ];
 };
+
+// All Employees for Admin Dashboard
+export const getAllEmployees = () => {
+  return [
+    {
+      id: "EMP001",
+      name: "Arjun Sharma",
+      email: "arjun.sharma@company.com",
+      department: "Engineering",
+      position: "Senior Developer",
+    },
+    {
+      id: "EMP002",
+      name: "Priya Verma",
+      email: "priya.verma@company.com",
+      department: "HR",
+      position: "HR Manager",
+    },
+    {
+      id: "EMP003",
+      name: "Rajesh Kumar",
+      email: "rajesh.kumar@company.com",
+      department: "Engineering",
+      position: "Lead Developer",
+    },
+    {
+      id: "EMP004",
+      name: "Anjali Singh",
+      email: "anjali.singh@company.com",
+      department: "Marketing",
+      position: "Marketing Executive",
+    },
+    {
+      id: "EMP005",
+      name: "Vikram Patel",
+      email: "vikram.patel@company.com",
+      department: "Finance",
+      position: "Finance Analyst",
+    },
+  ];
+};
+
+// All Employees Attendance Records for Admin
+export const getAllEmployeesAttendance = () => {
+  const employees = getAllEmployees();
+  const today = new Date();
+  const last7Days = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dayOfWeek = date.getDay();
+
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      // Skip weekends
+      last7Days.push(date.toISOString().split("T")[0]);
+    }
+  }
+
+  const statuses = ["Present", "Absent", "Late", "Half Day"];
+  const attendance = [];
+
+  employees.forEach((emp) => {
+    last7Days.forEach((date) => {
+      const rand = Math.random();
+      const statusDistribution = [0.7, 0.05, 0.15, 0.1];
+      let status = "Present";
+      let cumulative = 0;
+
+      for (let i = 0; i < statuses.length; i++) {
+        cumulative += statusDistribution[i];
+        if (rand < cumulative) {
+          status = statuses[i];
+          break;
+        }
+      }
+
+      const checkInHour = 9 + Math.floor(Math.random() * 2);
+      const checkInMinute = Math.floor(Math.random() * 60);
+      const checkOutHour = 17 + Math.floor(Math.random() * 2);
+      const checkOutMinute = Math.floor(Math.random() * 60);
+
+      attendance.push({
+        employeeId: emp.id,
+        employeeName: emp.name,
+        department: emp.department,
+        position: emp.position,
+        date,
+        status,
+        checkInTime:
+          status !== "Absent"
+            ? `${String(checkInHour).padStart(2, "0")}:${String(checkInMinute).padStart(2, "0")}`
+            : null,
+        checkOutTime:
+          status !== "Absent" && status !== "Half Day"
+            ? `${String(checkOutHour).padStart(2, "0")}:${String(checkOutMinute).padStart(2, "0")}`
+            : null,
+        workingHours:
+          status === "Present"
+            ? `${Math.floor(Math.random() * 2) + 7}h ${Math.floor(Math.random() * 60)}m`
+            : status === "Half Day"
+            ? `${Math.floor(Math.random() * 2) + 3}h ${Math.floor(Math.random() * 60)}m`
+            : null,
+      });
+    });
+  });
+
+  return attendance;
+};
+
+// Daily Attendance Summary for Admin
+export const getDailyAttendanceSummary = () => {
+  const today = new Date().toISOString().split("T")[0];
+  const attendance = getAllEmployeesAttendance();
+  const todayRecords = attendance.filter((a) => a.date === today);
+
+  return {
+    date: today,
+    totalEmployees: 5,
+    present: todayRecords.filter((a) => a.status === "Present").length,
+    absent: todayRecords.filter((a) => a.status === "Absent").length,
+    late: todayRecords.filter((a) => a.status === "Late").length,
+    halfDay: todayRecords.filter((a) => a.status === "Half Day").length,
+  };
+};

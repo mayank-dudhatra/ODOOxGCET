@@ -11,6 +11,10 @@ import EmployeeAttendance from "./pages/employee/Attendance";
 import EmployeeLeave from "./pages/employee/Leave";
 import EmployeeProfile from "./pages/employee/Profile";
 
+// Admin Routes
+import AdminEmployees from "./pages/admin/Employees";
+import AdminAttendance from "./pages/admin/Attendance";
+
 import "./index.css";
 
 function App() {
@@ -33,11 +37,29 @@ function App() {
             }
           />
 
+          {/* Admin Routes */}
+          <Route
+            path="/admin/employees"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminEmployees />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/attendance"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminAttendance />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Employee Routes */}
           <Route
             path="/employee/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="employee">
                 <EmployeeDashboard />
               </ProtectedRoute>
             }
@@ -45,7 +67,7 @@ function App() {
           <Route
             path="/employee/attendance"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="employee">
                 <EmployeeAttendance />
               </ProtectedRoute>
             }
@@ -53,7 +75,7 @@ function App() {
           <Route
             path="/employee/leave"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="employee">
                 <EmployeeLeave />
               </ProtectedRoute>
             }
@@ -61,7 +83,7 @@ function App() {
           <Route
             path="/employee/profile"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="employee">
                 <EmployeeProfile />
               </ProtectedRoute>
             }
@@ -73,3 +95,4 @@ function App() {
 }
 
 export default App;
+
