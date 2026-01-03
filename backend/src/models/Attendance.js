@@ -13,6 +13,16 @@ const attendanceSchema = new mongoose.Schema(
     },
     checkIn: Date,
     checkOut: Date,
+    checkInLocation: {
+      lat: Number,
+      lng: Number,
+    },
+    checkOutLocation: {
+      lat: Number,
+      lng: Number,
+    },
+    distanceFromOfficeMeters: Number,
+    isWithinOfficeRadius: Boolean,
     status: {
       type: String,
       enum: ["present", "absent", "late", "half-day"],

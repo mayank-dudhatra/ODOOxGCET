@@ -1,14 +1,53 @@
 import Attendance from "../models/Attendance.js";
 import User from "../models/User.js";
 
+const OFFICE_LAT = process.env.OFFICE_LAT ? parseFloat(process.env.OFFICE_LAT) : null;
+const OFFICE_LNG = process.env.OFFICE_LNG ? parseFloat(process.env.OFFICE_LNG) : null;
+const OFFICE_RADIUS_METERS = process.env.OFFICE_RADIUS_METERS
+  ? parseFloat(process.env.OFFICE_RADIUS_METERS)
+  : 200; // default 200m radius if not set
+
+const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
+  const toRad = (value) => (value * Math.PI) / 180;
+  const R = 6371000; // Earth radius in meters
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 /**
  * Check-In: Record employee check-in time
  */
 export const checkin = async (req, res) => {
   try {
     const userId = req.user?.id;
+    const { lat, lng } = req.body || {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    if (lat === undefined || lng === undefined) {
+      return res.status(400).json({ error: "Location is required for check-in" });
+    }
+
+    let distanceFromOffice = null;
+    let isWithinOfficeRadius = true;
+
+    if (OFFICE_LAT !== null && OFFICE_LNG !== null) {
+      distanceFromOffice = calculateDistanceMeters(lat, lng, OFFICE_LAT, OFFICE_LNG);
+      isWithinOfficeRadius = distanceFromOffice <= OFFICE_RADIUS_METERS;
+      if (!isWithinOfficeRadius) {
+        return res.status(400).json({
+          error: "You are outside the office geofence. Check-in denied.",
+          distanceFromOffice,
+          officeRadius: OFFICE_RADIUS_METERS,
+        });
+      }
+    }
 
     // Check if already checked in today
     const existingRecord = await Attendance.findOne({
@@ -46,6 +85,9 @@ export const checkin = async (req, res) => {
         date: today,
         checkIn: checkInTime,
         status: isLate ? "late" : "present",
+        checkInLocation: { lat, lng },
+        distanceFromOfficeMeters: distanceFromOffice,
+        isWithinOfficeRadius,
       },
       { upsert: true, new: true }
     );
@@ -55,6 +97,8 @@ export const checkin = async (req, res) => {
       checkInTime: checkInTime.toLocaleTimeString(),
       status: isLate ? "late" : "present",
       attendance: attendanceRecord,
+      distanceFromOffice,
+      officeRadius: OFFICE_RADIUS_METERS,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -67,6 +111,7 @@ export const checkin = async (req, res) => {
 export const checkout = async (req, res) => {
   try {
     const userId = req.user?.id;
+    const { lat, lng } = req.body || {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -98,6 +143,9 @@ export const checkout = async (req, res) => {
     ).toFixed(2);
 
     attendanceRecord.checkOut = checkOutTime;
+    if (lat !== undefined && lng !== undefined) {
+      attendanceRecord.checkOutLocation = { lat, lng };
+    }
     attendanceRecord.workingHours = workingHours;
 
     if (!attendanceRecord.status || attendanceRecord.status === "absent") {
@@ -181,6 +229,10 @@ export const getMyAttendance = async (req, res) => {
           ? todayRecord.checkOut.toLocaleTimeString()
           : null,
         workingHours: todayRecord.workingHours || "—",
+        checkInLocation: todayRecord.checkInLocation,
+        checkOutLocation: todayRecord.checkOutLocation,
+        distanceFromOfficeMeters: todayRecord.distanceFromOfficeMeters,
+        isWithinOfficeRadius: todayRecord.isWithinOfficeRadius,
       } : null,
       records: attendanceRecords.map((r) => ({
         _id: r._id,
@@ -189,6 +241,10 @@ export const getMyAttendance = async (req, res) => {
         checkIn: r.checkIn ? r.checkIn.toLocaleTimeString() : null,
         checkOut: r.checkOut ? r.checkOut.toLocaleTimeString() : null,
         workingHours: r.workingHours || 0,
+          checkInLocation: r.checkInLocation,
+          checkOutLocation: r.checkOutLocation,
+          distanceFromOfficeMeters: r.distanceFromOfficeMeters,
+          isWithinOfficeRadius: r.isWithinOfficeRadius,
       })),
       statistics: {
         ...stats,

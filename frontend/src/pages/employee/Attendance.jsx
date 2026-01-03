@@ -124,12 +124,36 @@ export default function Attendance() {
     return calendar;
   };
 
+  const getCurrentCoords = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation is not supported by this browser"));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        (err) => {
+          reject(new Error(err.message || "Unable to fetch location"));
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  };
+
   const handleCheckIn = async () => {
     try {
       setLoading(true);
       setError("");
-      const response = await api.post("/attendance/checkin");
-      setSuccessMessage(`Checked in at ${response.data.checkInTime}`);
+
+      const coords = await getCurrentCoords();
+      const response = await api.post("/attendance/checkin", coords);
+      const distanceText =
+        typeof response.data.distanceFromOffice === "number"
+          ? ` (distance ${response.data.distanceFromOffice.toFixed(0)}m)`
+          : "";
+      setSuccessMessage(`Checked in at ${response.data.checkInTime}${distanceText}`);
       setTimeout(() => setSuccessMessage(""), 3000);
       fetchAttendanceData();
     } catch (err) {
@@ -143,7 +167,16 @@ export default function Attendance() {
     try {
       setLoading(true);
       setError("");
-      const response = await api.post("/attendance/checkout");
+
+      let coords = {};
+      try {
+        coords = await getCurrentCoords();
+      } catch (locErr) {
+        // Allow checkout without location but surface a hint
+        console.warn("Checkout location skipped:", locErr.message);
+      }
+
+      const response = await api.post("/attendance/checkout", coords);
       setSuccessMessage(
         `Checked out at ${response.data.checkOutTime} - Worked: ${response.data.workingHours}hrs`
       );
