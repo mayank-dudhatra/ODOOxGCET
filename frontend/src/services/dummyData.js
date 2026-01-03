@@ -855,6 +855,8 @@ export const getSalaryStatement = (employeeId, month, year) => {
 
 // ============ REPORTS ============
 
+// ============ REPORTS ============
+
 export const getReportTypes = () => {
   return [
     { id: 1, name: "Salary Statement Report" },
@@ -869,9 +871,18 @@ export const getSalaryStatementReport = (employeeId, year) => {
   const allSalaries = getAllEmployeeSalaries();
   const empSalary = allSalaries.find((s) => s.employeeId === employeeId);
 
+  // Return null if employee or salary data is missing to prevent crashes
   if (!salaryData || !empSalary) return null;
 
-  if (!salaryData || !empSalary) return null;
+  // Use pfContribution.employee instead of providentFund.employeeContribution
+  // to match the structure in getEmployeeSalaryDetails()
+  const pfEmployee = salaryData.pfContribution?.employee || 0;
+  
+  // Safely find Professional Tax amount from the taxDeductions array
+  const profTax = salaryData.taxDeductions?.find(d => d.name === "Professional Tax")?.amount || 0;
+  
+  // Safely find Income Tax amount from the taxDeductions array
+  const incomeTax = salaryData.taxDeductions?.find(d => d.name === "Income Tax")?.amount || 0;
 
   return {
     reportType: "Salary Statement Report",
@@ -892,19 +903,24 @@ export const getSalaryStatementReport = (employeeId, year) => {
     deductions: [
       {
         name: "Provident Fund (PF) - Employee",
-        monthlyAmount: salaryData.providentFund.employeeContribution,
-        yearlyAmount: salaryData.providentFund.employeeContribution * 12,
+        monthlyAmount: pfEmployee,
+        yearlyAmount: pfEmployee * 12,
       },
       {
         name: "Professional Tax",
-        monthlyAmount: salaryData.taxDeductions.professionalTax,
-        yearlyAmount: salaryData.taxDeductions.professionalTax * 12,
+        monthlyAmount: profTax,
+        yearlyAmount: profTax * 12,
       },
+      {
+        name: "Income Tax (TDS)",
+        monthlyAmount: incomeTax,
+        yearlyAmount: incomeTax * 12,
+      }
     ],
-    monthlyGrossSalary: salaryData.grossSalary,
-    yearlyGrossSalary: salaryData.grossSalary * 12,
-    monthlyNetSalary: salaryData.netSalary,
-    yearlyNetSalary: salaryData.netSalary * 12,
+    monthlyGrossSalary: salaryData.grossSalary || 0,
+    yearlyGrossSalary: (salaryData.grossSalary || 0) * 12,
+    monthlyNetSalary: salaryData.netSalary || 0,
+    yearlyNetSalary: (salaryData.netSalary || 0) * 12,
   };
 };
 
