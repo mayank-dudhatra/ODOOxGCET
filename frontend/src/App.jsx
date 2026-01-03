@@ -4,6 +4,13 @@ import Login from "./pages/auth/Login";
 import CompanyRegister from "./pages/auth/CompanyRegister";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+
+// Employee Routes
+import EmployeeDashboard from "./pages/employee/Dashboard";
+import EmployeeAttendance from "./pages/employee/Attendance";
+import EmployeeLeave from "./pages/employee/Leave";
+import EmployeeProfile from "./pages/employee/Profile";
+
 import "./index.css";
 
 function App() {
@@ -22,6 +29,40 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Employee Routes */}
+          <Route
+            path="/employee/dashboard"
+            element={
+              <ProtectedRoute>
+                <EmployeeDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employee/attendance"
+            element={
+              <ProtectedRoute>
+                <EmployeeAttendance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employee/leave"
+            element={
+              <ProtectedRoute>
+                <EmployeeLeave />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employee/profile"
+            element={
+              <ProtectedRoute>
+                <EmployeeProfile />
               </ProtectedRoute>
             }
           />

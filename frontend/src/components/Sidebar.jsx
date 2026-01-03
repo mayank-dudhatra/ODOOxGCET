@@ -9,17 +9,23 @@ import {
   FiSettings,
   FiLogOut,
   FiClock,
+  FiUser,
 } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
-export default function Sidebar() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+export default function Sidebar({ sidebarOpen: propSidebarOpen, setSidebarOpen: propSetSidebarOpen }) {
+  const [internalSidebarOpen, setInternalSidebarOpen] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Use props if provided, otherwise use internal state
+  const sidebarOpen = propSidebarOpen !== undefined ? propSidebarOpen : internalSidebarOpen;
+  const setSidebarOpen = propSetSidebarOpen || setInternalSidebarOpen;
 
   // Role-based menu items
   const getMenuItems = () => {
-    const baseItems = [{ icon: FiHome, label: "Dashboard", active: true, path: "/dashboard" }];
+    const baseItems = [{ icon: FiHome, label: "Dashboard", path: "/employee/dashboard" }];
 
     if (user?.role === "admin") {
       return [
@@ -45,8 +51,8 @@ export default function Sidebar() {
       return [
         ...baseItems,
         { icon: FiCalendar, label: "Attendance", path: "/employee/attendance" },
-        { icon: FiClock, label: "My Leave", path: "/employee/leave" },
-        { icon: FiDollarSign, label: "Payroll", path: "/employee/payroll" },
+        { icon: FiClock, label: "Time Off", path: "/employee/leave" },
+        { icon: FiUser, label: "Profile", path: "/employee/profile" },
       ];
     } else if (user?.role === "manager") {
       return [
@@ -61,6 +67,10 @@ export default function Sidebar() {
   };
 
   const menuItems = getMenuItems();
+
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -101,7 +111,9 @@ export default function Sidebar() {
             key={idx}
             onClick={() => navigate(item.path)}
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition ${
-              item.active ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"
+              isActive(item.path)
+                ? "bg-blue-600 text-white"
+                : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <item.icon className="w-5 h-5" />
