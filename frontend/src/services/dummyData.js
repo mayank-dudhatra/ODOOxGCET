@@ -165,38 +165,145 @@ export const getAllEmployees = () => {
       id: "EMP001",
       name: "Arjun Sharma",
       email: "arjun.sharma@company.com",
+      phone: "+91 98765 43210",
       department: "Engineering",
       position: "Senior Developer",
+      joinDate: "2022-01-15",
+      status: "Active",
+      salary: 85000,
     },
     {
       id: "EMP002",
       name: "Priya Verma",
       email: "priya.verma@company.com",
+      phone: "+91 98765 43211",
       department: "HR",
       position: "HR Manager",
+      joinDate: "2021-06-10",
+      status: "Active",
+      salary: 65000,
     },
     {
       id: "EMP003",
       name: "Rajesh Kumar",
       email: "rajesh.kumar@company.com",
+      phone: "+91 98765 43212",
       department: "Engineering",
       position: "Lead Developer",
+      joinDate: "2020-03-20",
+      status: "Active",
+      salary: 95000,
     },
     {
       id: "EMP004",
       name: "Anjali Singh",
       email: "anjali.singh@company.com",
+      phone: "+91 98765 43213",
       department: "Marketing",
       position: "Marketing Executive",
+      joinDate: "2022-09-05",
+      status: "Active",
+      salary: 50000,
     },
     {
       id: "EMP005",
       name: "Vikram Patel",
       email: "vikram.patel@company.com",
+      phone: "+91 98765 43214",
       department: "Finance",
       position: "Finance Analyst",
+      joinDate: "2021-11-12",
+      status: "Active",
+      salary: 55000,
     },
   ];
+};
+
+// Get Single Employee Details
+export const getEmployeeDetails = (employeeId) => {
+  const allEmployees = getAllEmployees();
+  const employee = allEmployees.find((e) => e.id === employeeId);
+
+  if (!employee) return null;
+
+  return {
+    ...employee,
+    firstName: employee.name.split(" ")[0],
+    lastName: employee.name.split(" ")[1] || "",
+  };
+};
+
+// Get Employee Salary Information
+export const getEmployeeSalaryInfo = (employeeId) => {
+  const salaryMap = {
+    EMP001: {
+      monthWage: 100000,
+      yearlyWage: 1200000,
+      workingDaysPerWeek: 5,
+      breakTime: "1 Hour",
+      basicSalary: 50000,
+      hra: 25000,
+      standardAllowance: 16670,
+      performanceBonus: 4165,
+      lta: 4165,
+      fixedAllowance: 11670,
+      grossSalary: 111670,
+    },
+    EMP002: {
+      monthWage: 65000,
+      yearlyWage: 780000,
+      workingDaysPerWeek: 5,
+      breakTime: "45 Minutes",
+      basicSalary: 35000,
+      hra: 12500,
+      standardAllowance: 10000,
+      performanceBonus: 2500,
+      lta: 2500,
+      fixedAllowance: 8500,
+      grossSalary: 71000,
+    },
+    EMP003: {
+      monthWage: 120000,
+      yearlyWage: 1440000,
+      workingDaysPerWeek: 5,
+      breakTime: "1 Hour",
+      basicSalary: 60000,
+      hra: 30000,
+      standardAllowance: 20000,
+      performanceBonus: 5000,
+      lta: 5000,
+      fixedAllowance: 15000,
+      grossSalary: 135000,
+    },
+    EMP004: {
+      monthWage: 50000,
+      yearlyWage: 600000,
+      workingDaysPerWeek: 5,
+      breakTime: "45 Minutes",
+      basicSalary: 28000,
+      hra: 10000,
+      standardAllowance: 8000,
+      performanceBonus: 2000,
+      lta: 2000,
+      fixedAllowance: 6000,
+      grossSalary: 56000,
+    },
+    EMP005: {
+      monthWage: 55000,
+      yearlyWage: 660000,
+      workingDaysPerWeek: 5,
+      breakTime: "45 Minutes",
+      basicSalary: 30000,
+      hra: 12000,
+      standardAllowance: 8670,
+      performanceBonus: 2165,
+      lta: 2165,
+      fixedAllowance: 6500,
+      grossSalary: 61500,
+    },
+  };
+
+  return salaryMap[employeeId] || null;
 };
 
 // All Employees Attendance Records for Admin

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import Sidebar from "../../components/Sidebar";
+import EmployeeDetailsModal from "../../components/EmployeeDetailsModal";
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiChevronDown } from "react-icons/fi";
 
 export default function Employees() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
 
@@ -208,7 +210,7 @@ export default function Employees() {
                 </thead>
                 <tbody>
                   {filteredEmployees.map((emp) => (
-                    <tr key={emp.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                    <tr key={emp.id} className="border-b border-gray-200 hover:bg-gray-50 transition cursor-pointer" onClick={() => setSelectedEmployeeId(emp.id)}>
                       <td className="px-6 py-4">
                         <div>
                           <p className="text-sm font-medium text-gray-900">{emp.name}</p>
@@ -233,7 +235,7 @@ export default function Employees() {
                       <td className="px-6 py-4">
                         <p className="text-sm font-medium text-gray-900">₹{emp.salary.toLocaleString()}</p>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-2">
                           <button className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition">
                             <FiEdit2 className="w-4 h-4" />
@@ -363,6 +365,14 @@ export default function Employees() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Employee Details Modal */}
+      {selectedEmployeeId && (
+        <EmployeeDetailsModal
+          employeeId={selectedEmployeeId}
+          onClose={() => setSelectedEmployeeId(null)}
+        />
       )}
     </div>
   );
