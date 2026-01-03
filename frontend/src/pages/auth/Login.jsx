@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { login, signup } from "../../services/auth.api";
+import { useNavigate, Link } from "react-router-dom";
+import api from "../../services/api";
 
 export default function Login() {
-  const [isSignup, setIsSignup] = useState(false);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: "",
+    loginId: "",
     password: "",
-    name: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -24,75 +24,97 @@ export default function Login() {
     setError("");
 
     try {
-      const response = isSignup
-        ? await signup(formData)
-        : await login({ email: formData.email, password: formData.password });
+      const response = await api.post("/company/login", formData);
 
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-        window.location.href = "/dashboard";
+      // Store user data in localStorage
+      localStorage.setItem("token", JSON.stringify(response.data.user));
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      // Redirect based on role
+      if (response.data.user.role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (response.data.user.role === "hr") {
+        navigate("/hr/dashboard");
+      } else {
+        navigate("/employee/dashboard");
       }
     } catch (err) {
-      setError(err.response?.data?.message || "An error occurred");
+      setError(err.response?.data?.error || "Login failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-96">
-        <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">
-          {isSignup ? "Sign Up" : "Login"}
-        </h2>
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Dayflow HRMS</h1>
+          <p className="text-gray-600">Enterprise HR Management System</p>
+        </div>
 
-        {error && <div className="text-red-500 text-center mb-4">{error}</div>}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {isSignup && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Login ID
+            </label>
             <input
               type="text"
-              name="name"
-              placeholder="Full Name"
-              value={formData.name}
+              name="loginId"
+              placeholder="e.g., OIA20250001"
+              value={formData.loginId}
               onChange={handleChange}
+              required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          )}
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              name="password"
+              placeholder="Enter password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+            className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition"
           >
-            {loading ? "Loading..." : isSignup ? "Sign Up" : "Login"}
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <p className="text-center mt-4 text-gray-600">
-          {isSignup ? "Already have an account? " : "Don't have an account? "}
-          <button
-            onClick={() => setIsSignup(!isSignup)}
-            className="text-blue-600 font-semibold cursor-pointer"
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <p className="text-center text-gray-600 mb-4">
+            Don't have an account yet?
+          </p>
+          <Link
+            to="/register-company"
+            className="w-full block text-center bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
           >
-            {isSignup ? "Login" : "Sign Up"}
-          </button>
-        </p>
+            Register Company
+          </Link>
+        </div>
+
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-gray-700">
+          <p className="font-semibold mb-2">🔐 Admin Login ID Format:</p>
+          <p>OIA + Year + 0001 (e.g., OIA20250001)</p>
+        </div>
       </div>
     </div>
   );

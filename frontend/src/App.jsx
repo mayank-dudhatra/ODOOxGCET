@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
-import Signup from "./pages/auth/Signup";
+import CompanyRegister from "./pages/auth/CompanyRegister";
 import EmployeeDashboard from "./pages/employee/Dashboard";
 import Profile from "./pages/employee/Profile";
 import Attendance from "./pages/employee/Attendance";
@@ -16,8 +16,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register-company" element={<CompanyRegister />} />
+
+        {/* Protected Employee Routes */}
         <Route
           path="/employee/dashboard"
           element={
@@ -50,6 +54,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Protected Admin Routes */}
         <Route
           path="/admin/dashboard"
           element={
