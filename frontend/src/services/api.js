@@ -1,7 +1,22 @@
-import axios from "axios";
+import axios from 'axios';
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: 'http://localhost:5000/api',
 });
+
+// Interceptor to attach the token to every request
+api.interceptors.request.use(
+  (config) => {
+    // Matches the key used in your AuthContext/Login logic
+    const token = localStorage.getItem('token'); 
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export default api;
