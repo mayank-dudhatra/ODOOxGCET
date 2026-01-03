@@ -808,6 +808,51 @@ export const updateEmployeeSalaryDetails = (employeeId, updatedData) => {
   };
 };
 
+// Employee salary statement (per month/year) for payslip view/download
+export const getSalaryStatement = (employeeId, month, year) => {
+  const salaryData = getEmployeeSalaryDetails(employeeId);
+  if (!salaryData) return null;
+
+  const basic =
+    salaryData.salaryComponents.find((c) => c.name.toLowerCase().includes("basic"))?.amount || 0;
+  const hra =
+    salaryData.salaryComponents.find((c) => c.name.toLowerCase().includes("rent"))?.amount || 0;
+  const da =
+    salaryData.salaryComponents.find((c) => c.name.toLowerCase().includes("allowance"))?.amount || 0;
+
+  const allowances = salaryData.salaryComponents
+    .filter((c) => !c.name.toLowerCase().includes("basic"))
+    .reduce((sum, c) => sum + c.amount, 0);
+
+  const totalEarnings = salaryData.salaryComponents.reduce((sum, c) => sum + c.amount, 0);
+
+  const pfContribution = salaryData.pfContribution?.employee || 0;
+  const tds =
+    salaryData.taxDeductions?.find((d) => d.name.toLowerCase().includes("income"))?.amount || 0;
+  const otherDeductions = (salaryData.taxDeductions || [])
+    .filter((d) => !d.name.toLowerCase().includes("income"))
+    .reduce((sum, d) => sum + d.amount, 0);
+
+  const totalDeductions = pfContribution + tds + otherDeductions;
+  const netSalary = salaryData.netSalary || totalEarnings - totalDeductions;
+
+  return {
+    employeeId,
+    month,
+    year,
+    basicSalary: basic,
+    hra,
+    da,
+    allowances,
+    totalEarnings,
+    pfContribution,
+    tds,
+    otherDeductions,
+    totalDeductions,
+    netSalary,
+  };
+};
+
 // ============ REPORTS ============
 
 export const getReportTypes = () => {
