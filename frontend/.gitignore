@@ -1,6 +1,25 @@
+# Dependencies
 node_modules/
-dist/
+
+# Environment variables
 .env
+.env.local
+.env.development
+.env.production
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Logs
 *.log
+
+# OS files
 .DS_Store
-.vite/
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
