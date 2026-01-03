@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
 import {
   FiSearch,
@@ -10,11 +10,7 @@ import {
   FiClock,
   FiXCircle,
 } from "react-icons/fi";
-import {
-  getAllEmployeesAttendance,
-  getDailyAttendanceSummary,
-  getAllEmployees,
-} from "../../services/dummyData";
+import api from "../../services/api";
 
 export default function AdminAttendance() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -25,11 +21,40 @@ export default function AdminAttendance() {
     new Date().toISOString().split("T")[0]
   );
 
-  const allAttendance = getAllEmployeesAttendance();
-  const summary = getDailyAttendanceSummary();
-  const employees = getAllEmployees();
+  const [allAttendance, setAllAttendance] = useState([]);
+  const [summary, setSummary] = useState({
+    totalEmployees: 0,
+    present: 0,
+    absent: 0,
+    late: 0,
+    halfDay: 0,
+  });
+  const [loading, setLoading] = useState(false);
+  const [departments, setDepartments] = useState(["all"]);
 
-  const departments = ["all", ...new Set(employees.map((e) => e.department))];
+  // Fetch attendance data
+  useEffect(() => {
+    fetchAttendanceData();
+  }, [filterDate]);
+
+  const fetchAttendanceData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/attendance/all?date=${filterDate}`);
+      const { attendance, summary: summaryData } = response.data;
+
+      setAllAttendance(attendance);
+      setSummary(summaryData);
+
+      // Extract unique departments
+      const uniqueDepts = ["all", ...new Set(attendance.map((r) => r.department))];
+      setDepartments(uniqueDepts);
+    } catch (error) {
+      console.error("Failed to fetch attendance:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter attendance records
   const filteredAttendance = allAttendance.filter((record) => {
@@ -39,21 +64,22 @@ export default function AdminAttendance() {
     const matchesDept =
       filterDepartment === "all" || record.department === filterDepartment;
     const matchesStatus =
-      filterStatus === "all" || record.status === filterStatus;
-    const matchesDate = record.date === filterDate;
+      filterStatus === "all" || 
+      record.status.toLowerCase() === filterStatus.toLowerCase();
 
-    return matchesSearch && matchesDept && matchesStatus && matchesDate;
+    return matchesSearch && matchesDept && matchesStatus;
   });
 
   const getStatusIcon = (status) => {
-    switch (status) {
-      case "Present":
+    const statusLower = status.toLowerCase();
+    switch (statusLower) {
+      case "present":
         return <FiCheckCircle className="w-5 h-5 text-green-500" />;
-      case "Absent":
+      case "absent":
         return <FiXCircle className="w-5 h-5 text-red-500" />;
-      case "Late":
+      case "late":
         return <FiClock className="w-5 h-5 text-orange-500" />;
-      case "Half Day":
+      case "half-day":
         return <FiAlertCircle className="w-5 h-5 text-yellow-500" />;
       default:
         return null;
@@ -61,18 +87,24 @@ export default function AdminAttendance() {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case "Present":
+    const statusLower = status.toLowerCase();
+    switch (statusLower) {
+      case "present":
         return "bg-green-100 text-green-800";
-      case "Absent":
+      case "absent":
         return "bg-red-100 text-red-800";
-      case "Late":
+      case "late":
         return "bg-orange-100 text-orange-800";
-      case "Half Day":
+      case "half-day":
         return "bg-yellow-100 text-yellow-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const capitalizeStatus = (status) => {
+    if (status === "half-day") return "Half Day";
+    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   return (
@@ -197,10 +229,10 @@ export default function AdminAttendance() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">All Status</option>
-                  <option value="Present">Present</option>
-                  <option value="Absent">Absent</option>
-                  <option value="Late">Late</option>
-                  <option value="Half Day">Half Day</option>
+                  <option value="present">Present</option>
+                  <option value="absent">Absent</option>
+                  <option value="late">Late</option>
+                  <option value="half-day">Half Day</option>
                 </select>
               </div>
 
@@ -271,7 +303,7 @@ export default function AdminAttendance() {
                                 record.status
                               )}`}
                             >
-                              {record.status}
+                              {capitalizeStatus(record.status)}
                             </span>
                           </div>
                         </td>

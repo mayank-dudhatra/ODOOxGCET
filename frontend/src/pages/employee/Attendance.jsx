@@ -1,32 +1,169 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
 import { FiClock, FiCheck, FiX, FiCalendar } from "react-icons/fi";
-import {
-  getTodayAttendance,
-  getMonthlyAttendance,
-  getAttendanceSummary,
-} from "../../services/dummyData";
+import api from "../../services/api";
 
 export default function Attendance() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [viewMode, setViewMode] = useState("month"); // month or day
-  const [currentDate] = useState(new Date());
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const todayAttendance = getTodayAttendance();
-  const monthlyAttendance = getMonthlyAttendance();
-  const attendanceSummary = getAttendanceSummary();
+  const [todayAttendance, setTodayAttendance] = useState({
+    status: "—",
+    date: new Date().toISOString().split("T")[0],
+    checkInTime: null,
+    checkOutTime: null,
+    workingHours: "—",
+  });
+
+  const [monthlyAttendance, setMonthlyAttendance] = useState([]);
+  const [attendanceSummary, setAttendanceSummary] = useState({
+    month: new Date().toLocaleString("default", { month: "long" }),
+    present: 0,
+    late: 0,
+    absent: 0,
+    halfDay: 0,
+    attendancePercentage: 0,
+  });
+
+  // Fetch attendance data on mount
+  useEffect(() => {
+    fetchAttendanceData();
+  }, []);
+
+  const fetchAttendanceData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/attendance/my");
+      const { today, records, statistics } = response.data;
+
+      // Set today's data
+      if (today) {
+        setTodayAttendance({
+          status: today.status.charAt(0).toUpperCase() + today.status.slice(1),
+          date: today.date,
+          checkInTime: today.checkInTime,
+          checkOutTime: today.checkOutTime,
+          workingHours: today.workingHours,
+        });
+      }
+
+      // Set monthly data
+      const monthData = generateMonthlyCalendar(records);
+      setMonthlyAttendance(monthData);
+
+      // Set summary
+      setAttendanceSummary({
+        month: statistics.month,
+        present: statistics.present,
+        late: statistics.late,
+        absent: statistics.absent,
+        halfDay: statistics.halfDay,
+        attendancePercentage: statistics.attendancePercentage,
+      });
+    } catch (err) {
+      console.error("Failed to fetch attendance:", err);
+      setError("Failed to load attendance data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateMonthlyCalendar = (records) => {
+    const today = new Date();
+    const month = today.getMonth();
+    const year = today.getFullYear();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    const daysInMonth = lastDay.getDate();
+    const calendar = [];
+    const recordMap = {};
+
+    // Create map for quick lookup
+    records.forEach((record) => {
+      recordMap[record.date] = record;
+    });
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dayOfWeek = date.getDay();
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        calendar.push({
+          date: dateStr,
+          day,
+          dayName: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dayOfWeek],
+          status: "Weekend",
+          checkInTime: null,
+          checkOutTime: null,
+        });
+      } else {
+        const record = recordMap[dateStr];
+        calendar.push({
+          date: dateStr,
+          day,
+          dayName: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dayOfWeek],
+          status: record
+            ? record.status.charAt(0).toUpperCase() + record.status.slice(1)
+            : "Absent",
+          checkInTime: record?.checkIn || null,
+          checkOutTime: record?.checkOut || null,
+        });
+      }
+    }
+
+    return calendar;
+  };
+
+  const handleCheckIn = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await api.post("/attendance/checkin");
+      setSuccessMessage(`Checked in at ${response.data.checkInTime}`);
+      setTimeout(() => setSuccessMessage(""), 3000);
+      fetchAttendanceData();
+    } catch (err) {
+      setError(err.response?.data?.error || "Check-in failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await api.post("/attendance/checkout");
+      setSuccessMessage(
+        `Checked out at ${response.data.checkOutTime} - Worked: ${response.data.workingHours}hrs`
+      );
+      setTimeout(() => setSuccessMessage(""), 3000);
+      fetchAttendanceData();
+    } catch (err) {
+      setError(err.response?.data?.error || "Check-out failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case "Present":
+    const statusLower = status.toLowerCase();
+    switch (statusLower) {
+      case "present":
         return "bg-green-100 text-green-800";
-      case "Absent":
+      case "absent":
         return "bg-red-100 text-red-800";
-      case "Late":
+      case "late":
         return "bg-orange-100 text-orange-800";
-      case "Half Day":
+      case "half-day":
+      case "half day":
         return "bg-yellow-100 text-yellow-800";
-      case "Weekend":
+      case "weekend":
         return "bg-gray-100 text-gray-500";
       default:
         return "bg-gray-100 text-gray-800";
@@ -34,20 +171,17 @@ export default function Attendance() {
   };
 
   const getStatusIcon = (status) => {
-    switch (status) {
-      case "Present":
+    const statusLower = status.toLowerCase();
+    switch (statusLower) {
+      case "present":
         return <FiCheck className="w-4 h-4" />;
-      case "Absent":
+      case "absent":
         return <FiX className="w-4 h-4" />;
-      case "Late":
+      case "late":
         return <FiClock className="w-4 h-4" />;
       default:
         return null;
     }
-  };
-
-  const getDayNumber = (dateString) => {
-    return new Date(dateString).getDate();
   };
 
   return (
@@ -101,13 +235,33 @@ export default function Attendance() {
 
             {/* Action Buttons */}
             <div className="mt-4 flex gap-3">
-              <button className="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2">
+              {error && (
+                <div className="w-full bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+              {successMessage && (
+                <div className="w-full bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg text-sm">
+                  {successMessage}
+                </div>
+              )}
+            </div>
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={handleCheckIn}
+                disabled={loading || todayAttendance.checkInTime}
+                className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2"
+              >
                 <FiCheck className="w-5 h-5" />
-                Mark In
+                {loading ? "Processing..." : "Mark In"}
               </button>
-              <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2">
+              <button
+                onClick={handleCheckOut}
+                disabled={loading || !todayAttendance.checkInTime || todayAttendance.checkOutTime}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2"
+              >
                 <FiX className="w-5 h-5" />
-                Mark Out
+                {loading ? "Processing..." : "Mark Out"}
               </button>
             </div>
           </div>
