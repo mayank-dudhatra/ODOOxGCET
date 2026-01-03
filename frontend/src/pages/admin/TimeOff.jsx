@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
-import { FiSearch, FiCheck, FiX, FiFilter } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiFilter, FiPaperclip, FiDownload, FiRefreshCw } from "react-icons/fi";
 import api from "../../services/api";
 
 export default function TimeOff() {
@@ -13,26 +13,47 @@ export default function TimeOff() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [leaveRequests, setLeaveRequests] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch leave requests
+  // Fetch leave requests function
+  const fetchLeaveRequests = async (showRefreshIndicator = false) => {
+    try {
+      if (showRefreshIndicator) setIsRefreshing(true);
+      const response = await api.get("/leave/all");
+      setLeaveRequests(response.data);
+      setLastUpdated(new Date());
+      setError("");
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to load leave requests");
+      console.error("Leave fetch error:", err);
+    } finally {
+      if (showRefreshIndicator) setIsRefreshing(false);
+    }
+  };
+
+  // Initial fetch
   useEffect(() => {
-    const fetchLeaveRequests = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get("/leave/all");
-        setLeaveRequests(response.data);
-        setError("");
-      } catch (err) {
-        setError(err.response?.data?.error || "Failed to load leave requests");
-        console.error("Leave fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
+    const initialFetch = async () => {
+      setLoading(true);
+      await fetchLeaveRequests();
+      setLoading(false);
     };
 
     if (user) {
-      fetchLeaveRequests();
+      initialFetch();
     }
+  }, [user]);
+
+  // Auto-refresh every 10 seconds
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(() => {
+      fetchLeaveRequests();
+    }, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(interval);
   }, [user]);
 
   // Calculate summary
@@ -92,9 +113,8 @@ export default function TimeOff() {
   const handleApprove = async (requestId) => {
     try {
       await api.put(`/leave/${requestId}/approve`);
-      // Refresh the list
-      const response = await api.get("/leave/all");
-      setLeaveRequests(response.data);
+      // Refresh the list immediately
+      await fetchLeaveRequests();
     } catch (err) {
       alert(err.response?.data?.error || "Failed to approve leave");
     }
@@ -103,11 +123,31 @@ export default function TimeOff() {
   const handleReject = async (requestId) => {
     try {
       await api.put(`/leave/${requestId}/reject`);
-      // Refresh the list
-      const response = await api.get("/leave/all");
-      setLeaveRequests(response.data);
+      // Refresh the list immediately
+      await fetchLeaveRequests();
     } catch (err) {
       alert(err.response?.data?.error || "Failed to reject leave");
+    }
+  };
+
+  const handleDownloadDocument = async (requestId) => {
+    try {
+      const response = await api.get(`/leave/${requestId}/document`, {
+        responseType: 'blob',
+      });
+      
+      // Create a blob URL and download
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `leave_document_${requestId}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to download document");
     }
   };
 
@@ -127,7 +167,20 @@ export default function TimeOff() {
                 ? "Manage all employee leave requests and approvals"
                 : "Review and manage leave requests"}
             </p>
+            {lastUpdated && (
+              <p className="text-xs text-gray-500 mt-1">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
           </div>
+          <button
+            onClick={() => fetchLeaveRequests(true)}
+            disabled={isRefreshing}
+            className={`flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <FiRefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
 
         {/* Content */}
@@ -333,7 +386,18 @@ export default function TimeOff() {
                         </p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-sm text-gray-700">{request.reason}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-gray-700">{request.reason}</p>
+                          {request.hasDocument && (
+                            <button
+                              onClick={() => handleDownloadDocument(request.id)}
+                              className="p-1 hover:bg-blue-50 rounded text-blue-600 transition"
+                              title="Download attached document"
+                            >
+                              <FiPaperclip className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm text-gray-600">

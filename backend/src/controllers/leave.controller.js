@@ -24,6 +24,27 @@ export const applyLeave = async (req, res) => {
       return res.status(400).json({ error: "Start date must be before end date" });
     }
 
+    // Check for overlapping leaves
+    const overlappingLeaves = await Leave.find({
+      userId,
+      status: { $in: ["pending", "approved"] },
+      $or: [
+        // New leave starts during existing leave
+        { startDate: { $lte: end }, endDate: { $gte: start } },
+        // Existing leave starts during new leave
+        { startDate: { $gte: start, $lte: end } },
+        // New leave is completely within existing leave
+        { startDate: { $lte: start }, endDate: { $gte: end } }
+      ]
+    });
+
+    if (overlappingLeaves.length > 0) {
+      const existingLeave = overlappingLeaves[0];
+      return res.status(400).json({ 
+        error: `You already have a ${existingLeave.status} leave from ${new Date(existingLeave.startDate).toLocaleDateString("en-IN")} to ${new Date(existingLeave.endDate).toLocaleDateString("en-IN")}. Cannot apply for overlapping dates.` 
+      });
+    }
+
     // Calculate days
     const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
@@ -253,6 +274,32 @@ export const rejectLeave = async (req, res) => {
         status: "Rejected",
       },
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Download leave document
+export const downloadDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const leave = await Leave.findById(id);
+
+    if (!leave) {
+      return res.status(404).json({ error: "Leave request not found" });
+    }
+
+    if (!leave.document || !leave.document.data) {
+      return res.status(404).json({ error: "No document attached to this leave request" });
+    }
+
+    // Set response headers
+    res.setHeader("Content-Type", leave.document.contentType);
+    res.setHeader("Content-Disposition", `attachment; filename="${leave.document.filename}"`);
+    
+    // Send the buffer data
+    res.send(leave.document.data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
