@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import {
   getAllLeaveRequests,
@@ -7,6 +8,7 @@ import {
 import { FiSearch, FiCheck, FiX, FiFilter } from "react-icons/fi";
 
 export default function TimeOff() {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -79,7 +81,9 @@ export default function TimeOff() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Time Off</h1>
             <p className="text-gray-600 text-sm mt-1">
-              Manage employee leave requests and approvals
+              {user?.role === "admin"
+                ? "Manage all employee leave requests and approvals"
+                : "Review and manage leave requests"}
             </p>
           </div>
         </div>

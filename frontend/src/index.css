@@ -1,3 +1,72 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* Print Styles */
+@media print {
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\:no-shadow {
+    box-shadow: none !important;
+  }
+
+  /* Page margins */
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+
+  /* Prevent content from cutting off */
+  .max-w-4xl {
+    max-width: 100% !important;
+  }
+
+  /* Ensure table displays properly */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  /* Preserve styling on print */
+  .bg-white {
+    background-color: white !important;
+  }
+
+  .bg-gray-50 {
+    background-color: #f9fafb !important;
+  }
+
+  .bg-blue-50 {
+    background-color: #eff6ff !important;
+  }
+
+  /* Ensure text is black on print */
+  .text-gray-900,
+  .text-gray-600 {
+    color: #000 !important;
+  }
+
+  .text-blue-600 {
+    color: #2563eb !important;
+  }
+
+  /* Prevent page breaks in table rows */
+  table tbody tr {
+    page-break-inside: avoid;
+  }
+}

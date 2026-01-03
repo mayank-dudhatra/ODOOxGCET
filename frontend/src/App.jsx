@@ -10,6 +10,8 @@ import EmployeeDashboard from "./pages/employee/Dashboard";
 import EmployeeAttendance from "./pages/employee/Attendance";
 import EmployeeLeave from "./pages/employee/Leave";
 import EmployeeProfile from "./pages/employee/Profile";
+import EmployeeSalary from "./pages/employee/Salary";
+import EmployeeSettings from "./pages/employee/Settings";
 
 // Admin Routes
 import AdminEmployees from "./pages/admin/Employees";
@@ -19,6 +21,9 @@ import AdminPayroll from "./pages/admin/Payroll";
 import AdminPayslipDetails from "./pages/admin/PayslipDetails";
 import AdminSalaryManagement from "./pages/admin/SalaryManagement";
 import AdminSalaryDetails from "./pages/admin/SalaryDetails";
+import AdminReports from "./pages/admin/Reports";
+import AdminReportView from "./pages/admin/ReportView";
+import AdminSettings from "./pages/admin/Settings";
 
 import "./index.css";
 
@@ -99,6 +104,72 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/reports"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminReports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reports/view"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminReportView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminSettings />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* HR Routes */}
+          <Route
+            path="/hr/employees"
+            element={
+              <ProtectedRoute requiredRole="hr">
+                <AdminEmployees />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/hr/attendance"
+            element={
+              <ProtectedRoute requiredRole="hr">
+                <AdminAttendance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/hr/time-off"
+            element={
+              <ProtectedRoute requiredRole="hr">
+                <AdminTimeOff />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/hr/payroll"
+            element={
+              <ProtectedRoute requiredRole="hr">
+                <AdminPayroll />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/hr/reports"
+            element={
+              <ProtectedRoute requiredRole="hr">
+                <AdminReports />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Employee Routes */}
           <Route
@@ -130,6 +201,22 @@ function App() {
             element={
               <ProtectedRoute requiredRole="employee">
                 <EmployeeProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employee/salary"
+            element={
+              <ProtectedRoute requiredRole="employee">
+                <EmployeeSalary />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employee/settings"
+            element={
+              <ProtectedRoute requiredRole="employee">
+                <EmployeeSettings />
               </ProtectedRoute>
             }
           />

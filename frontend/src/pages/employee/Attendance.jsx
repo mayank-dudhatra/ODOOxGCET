@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
-import { FiClock, FiCheck, FiX, FiCalendar } from "react-icons/fi";
+import { FiClock, FiCheck, FiX, FiCalendar, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import {
   getTodayAttendance,
   getMonthlyAttendance,
@@ -8,9 +9,12 @@ import {
 } from "../../services/dummyData";
 
 export default function Attendance() {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [viewMode, setViewMode] = useState("month"); // month or day
   const [currentDate] = useState(new Date());
+  const [isMarkedToday, setIsMarkedToday] = useState(false);
+  const [todayStatus, setTodayStatus] = useState(null);
 
   const todayAttendance = getTodayAttendance();
   const monthlyAttendance = getMonthlyAttendance();
@@ -67,6 +71,48 @@ export default function Attendance() {
 
         {/* Content */}
         <div className="p-8">
+          {/* Mark Attendance Section */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6 shadow-sm mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">Mark Your Attendance</h2>
+                <p className="text-sm text-gray-600">Click below to mark your attendance for today</p>
+              </div>
+              {isMarkedToday ? (
+                <div className="flex items-center gap-3 px-6 py-3 bg-green-100 rounded-lg border border-green-300">
+                  <FiCheckCircle className="w-6 h-6 text-green-600" />
+                  <div>
+                    <p className="text-sm font-semibold text-green-900">Marked as {todayStatus}</p>
+                    <p className="text-xs text-green-700">at {new Date().toLocaleTimeString()}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setIsMarkedToday(true);
+                      setTodayStatus("Present");
+                    }}
+                    className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
+                  >
+                    <FiCheck className="w-5 h-5" />
+                    Mark Present
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMarkedToday(true);
+                      setTodayStatus("Absent");
+                    }}
+                    className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
+                  >
+                    <FiX className="w-5 h-5" />
+                    Mark Absent
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Today's Attendance Section */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Attendance</h2>

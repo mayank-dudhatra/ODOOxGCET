@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import EmployeeDetailsModal from "../../components/EmployeeDetailsModal";
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiChevronDown } from "react-icons/fi";
 
 export default function Employees() {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
@@ -99,15 +101,21 @@ export default function Employees() {
           <div className="px-8 py-4 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Employees Management</h1>
-              <p className="text-sm text-gray-500 mt-1">Manage all employees in the system</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {user?.role === "admin" 
+                  ? "Manage all employees in the system" 
+                  : "View and manage employee information"}
+              </p>
             </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition"
-            >
-              <FiPlus className="w-5 h-5" />
-              Add Employee
-            </button>
+            {(user?.role === "admin" || user?.role === "hr") && (
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition"
+              >
+                <FiPlus className="w-5 h-5" />
+                Add Employee
+              </button>
+            )}
           </div>
         </div>
 
@@ -237,12 +245,16 @@ export default function Employees() {
                       </td>
                       <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-2">
-                          <button className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition">
-                            <FiEdit2 className="w-4 h-4" />
-                          </button>
-                          <button className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition">
-                            <FiTrash2 className="w-4 h-4" />
-                          </button>
+                          {(user?.role === "admin" || user?.role === "hr") && (
+                            <button className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition">
+                              <FiEdit2 className="w-4 h-4" />
+                            </button>
+                          )}
+                          {user?.role === "admin" && (
+                            <button className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition">
+                              <FiTrash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

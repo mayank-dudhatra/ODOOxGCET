@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
 import {
   FiSearch,
@@ -9,6 +10,7 @@ import {
   FiAlertCircle,
   FiClock,
   FiXCircle,
+  FiEdit2,
 } from "react-icons/fi";
 import {
   getAllEmployeesAttendance,
@@ -17,6 +19,7 @@ import {
 } from "../../services/dummyData";
 
 export default function AdminAttendance() {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("all");
@@ -87,7 +90,9 @@ export default function AdminAttendance() {
           <div className="px-8 py-4 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Attendance Management</h1>
-              <p className="text-sm text-gray-500 mt-1">Track all employees' attendance</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {user?.role === "admin" ? "Track and manage all employees' attendance" : "View all employees' attendance"}
+              </p>
             </div>
             <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
               <FiDownload className="w-5 h-5" />
@@ -240,6 +245,11 @@ export default function AdminAttendance() {
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                       Working Hours
                     </th>
+                    {(user?.role === "admin" || user?.role === "hr") && (
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                        Action
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -290,11 +300,18 @@ export default function AdminAttendance() {
                             {record.workingHours || "—"}
                           </p>
                         </td>
+                        {(user?.role === "admin" || user?.role === "hr") && (
+                          <td className="px-6 py-4">
+                            <button className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition">
+                              <FiEdit2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" className="px-6 py-8 text-center">
+                      <td colSpan={user?.role === "admin" || user?.role === "hr" ? "8" : "7"} className="px-6 py-8 text-center">
                         <p className="text-gray-500">No attendance records found.</p>
                       </td>
                     </tr>
