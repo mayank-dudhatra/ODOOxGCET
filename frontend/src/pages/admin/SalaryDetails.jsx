@@ -12,6 +12,7 @@ export default function SalaryDetails() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
 
+  // Load initial data from dummy service
   const salaryData = getEmployeeSalaryDetails(employeeId);
 
   const [formData, setFormData] = useState({
@@ -43,24 +44,35 @@ export default function SalaryDetails() {
   };
 
   const handleSave = () => {
-    console.log("Saving salary details:", formData);
+    // In a real app, you'd call an API here. 
+    // Since we are using dummy data, we just update the local state and exit edit mode.
     setIsEditMode(false);
-    alert("Salary information updated successfully!");
+    alert("Salary information updated successfully (Local Session)!");
   };
 
   const handleCancel = () => {
+    // Reset to original data
+    setFormData({
+      salaryComponents: salaryData.salaryComponents,
+      pfContribution: salaryData.pfContribution,
+      taxDeductions: salaryData.taxDeductions,
+    });
     setIsEditMode(false);
   };
 
   const handleComponentChange = (index, field, value) => {
     const updatedComponents = [...formData.salaryComponents];
-    updatedComponents[index][field] = value;
+    // Ensure value is a number to prevent .toFixed() crashes
+    const numValue = isNaN(parseFloat(value)) ? 0 : parseFloat(value);
     
-    // Auto-calculate percentage if amount changes
-    if (field === "amount") {
-      const totalSalary = updatedComponents.reduce((sum, comp) => sum + comp.amount, 0);
-      updatedComponents[index].percentage = (value / totalSalary * 100).toFixed(2);
-    }
+    updatedComponents[index][field] = numValue;
+    
+    // Recalculate percentages for all components based on the new total
+    const totalSalary = updatedComponents.reduce((sum, comp) => sum + comp.amount, 0);
+    
+    updatedComponents.forEach((comp) => {
+      comp.percentage = totalSalary > 0 ? (comp.amount / totalSalary) * 100 : 0;
+    });
     
     setFormData((prev) => ({
       ...prev,
@@ -70,7 +82,7 @@ export default function SalaryDetails() {
 
   const handleTaxChange = (index, field, value) => {
     const updatedTaxes = [...formData.taxDeductions];
-    updatedTaxes[index][field] = value;
+    updatedTaxes[index][field] = isNaN(parseFloat(value)) ? 0 : parseFloat(value);
     setFormData((prev) => ({
       ...prev,
       taxDeductions: updatedTaxes,
@@ -82,18 +94,16 @@ export default function SalaryDetails() {
       ...prev,
       pfContribution: {
         ...prev.pfContribution,
-        [field]: value,
+        [field]: isNaN(parseFloat(value)) ? 0 : parseFloat(value),
       },
     }));
   };
 
-  const totalEarnings = formData.salaryComponents.reduce(
-    (sum, comp) => sum + comp.amount,
-    0
-  );
+  // Calculations for display
+  const totalEarnings = formData.salaryComponents.reduce((sum, comp) => sum + comp.amount, 0);
   const totalDeductions =
-    formData.pfContribution.employee +
-    formData.taxDeductions.reduce((sum, tax) => sum + tax.amount, 0);
+    (formData.pfContribution.employee || 0) +
+    formData.taxDeductions.reduce((sum, tax) => sum + (tax.amount || 0), 0);
   const calculatedNetSalary = totalEarnings - totalDeductions;
 
   return (
@@ -115,194 +125,110 @@ export default function SalaryDetails() {
                 <h1 className="text-2xl font-bold text-gray-900">
                   Salary Information - {salaryData.name}
                 </h1>
-                <p className="text-sm text-gray-600">
-                  View and update employee salary details
-                </p>
+                <p className="text-sm text-gray-600">View and update employee salary details</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {!isEditMode ? (
-                user?.role === "admin" ? (
+                user?.role === "admin" && (
                   <button
                     onClick={handleEditToggle}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
                   >
-                    <FiEdit2 className="w-4 h-4" />
-                    Edit
+                    <FiEdit2 className="w-4 h-4" /> Edit
                   </button>
-                ) : null
+                )
               ) : (
                 <>
                   <button
                     onClick={handleSave}
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
                   >
-                    <FiCheck className="w-4 h-4" />
-                    Save Changes
+                    <FiCheck className="w-4 h-4" /> Save Changes
                   </button>
                   <button
                     onClick={handleCancel}
                     className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
                   >
-                    <FiX className="w-4 h-4" />
-                    Cancel
+                    <FiX className="w-4 h-4" /> Cancel
                   </button>
                 </>
               )}
             </div>
           </div>
-        </div>        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* General Work Information */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">
-              General Work Information
-            </h2>
+        </div>
 
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* General Information */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-6">General Work Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <p className="text-sm text-gray-600 font-medium mb-2">
-                  Month Wage
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ₹{salaryData.monthWage.toLocaleString("en-IN", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  })} / Month
-                </p>
+                <p className="text-sm text-gray-600 font-medium mb-2">Month Wage</p>
+                <p className="text-2xl font-bold text-gray-900">₹{totalEarnings.toLocaleString("en-IN")}</p>
               </div>
-
               <div>
-                <p className="text-sm text-gray-600 font-medium mb-2">
-                  Yearly Wage
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ₹{salaryData.yearlyWage.toLocaleString("en-IN", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  })} / Yearly
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-600 font-medium mb-2">
-                  No of working days in a week
-                </p>
-                <p className="text-lg text-gray-900">{salaryData.workingDaysPerWeek}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-600 font-medium mb-2">
-                  Break Time
-                </p>
-                <p className="text-lg text-gray-900">{salaryData.breakTime}</p>
+                <p className="text-sm text-gray-600 font-medium mb-2">Yearly Wage</p>
+                <p className="text-2xl font-bold text-gray-900">₹{(totalEarnings * 12).toLocaleString("en-IN")}</p>
               </div>
             </div>
           </div>
 
           {/* Salary Components */}
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">
-              Salary Components
-            </h2>
-
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Salary Components</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               {formData.salaryComponents.map((component, idx) => (
-                <div
-                  key={idx}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
-                >
-                  <p className="text-sm font-medium text-gray-900 mb-3">
-                    {component.name}
-                  </p>
-
+                <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                  <p className="text-sm font-medium text-gray-900 mb-3">{component.name}</p>
                   {isEditMode ? (
                     <div className="space-y-2">
-                      <div>
-                        <label className="text-xs text-gray-600">Amount</label>
-                        <input
-                          type="number"
-                          value={component.amount}
-                          onChange={(e) =>
-                            handleComponentChange(idx, "amount", parseFloat(e.target.value))
-                          }
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <p className="text-xs text-gray-600">
-                        ₹/month {component.percentage.toFixed(2)} %
+                      <label className="text-xs text-gray-600">Amount (₹)</label>
+                      <input
+                        type="number"
+                        value={component.amount}
+                        onChange={(e) => handleComponentChange(idx, "amount", e.target.value)}
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                      <p className="text-xs text-blue-600 font-semibold">
+                        {Number(component.percentage || 0).toFixed(2)} % of Gross
                       </p>
                     </div>
                   ) : (
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">
-                      ₹{component.amount.toLocaleString("en-IN", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                        })}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        ₹/month {component.percentage.toFixed(2)} %
-                      </p>
+                      <p className="text-sm font-semibold text-gray-900">₹{component.amount.toLocaleString("en-IN")}</p>
+                      <p className="text-xs text-gray-600">{Number(component.percentage || 0).toFixed(2)} %</p>
                     </div>
                   )}
                 </div>
               ))}
             </div>
 
-            {/* Gross Salary */}
-            <div className="border-2 border-blue-600 rounded-lg p-4 bg-blue-50 mb-6">
+            <div className="border-2 border-blue-600 rounded-lg p-4 bg-blue-50">
               <p className="text-sm font-medium text-gray-900 mb-2">Gross Salary</p>
-              <p className="text-3xl font-bold text-blue-600">
-                ₹{(totalEarnings / 100).toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </p>
+              <p className="text-3xl font-bold text-blue-600">₹{totalEarnings.toLocaleString("en-IN")}</p>
             </div>
           </div>
 
-          {/* Provident Fund Contribution */}
+          {/* PF Contribution */}
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">
-              Provident Fund (PF) Contribution
-            </h2>
-
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Provident Fund (PF)</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="border border-gray-200 rounded-lg p-4">
-                <p className="text-sm font-medium text-gray-900 mb-3">Employee</p>
+                <p className="text-sm font-medium text-gray-900 mb-3">Employee Contribution</p>
                 {isEditMode ? (
                   <div className="space-y-2">
                     <input
                       type="number"
                       value={formData.pfContribution.employee}
-                      onChange={(e) =>
-                        handlePFChange("employee", parseFloat(e.target.value))
-                      }
+                      onChange={(e) => handlePFChange("employee", e.target.value)}
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                     />
-                    <div>
-                      <input
-                        type="number"
-                        value={formData.pfContribution.percentage}
-                        onChange={(e) =>
-                          handlePFChange("percentage", parseFloat(e.target.value))
-                        }
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                      />
-                      <p className="text-xs text-gray-600 mt-1">%</p>
-                    </div>
                   </div>
                 ) : (
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {formData.pfContribution.employee}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      ₹/month {formData.pfContribution.percentage}%
-                    </p>
-                  </div>
+                  <p className="text-sm font-semibold text-gray-900">₹{formData.pfContribution.employee?.toLocaleString("en-IN")}</p>
                 )}
               </div>
             </div>
@@ -310,49 +236,30 @@ export default function SalaryDetails() {
 
           {/* Tax Deductions */}
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">
-              Tax Deductions
-            </h2>
-
-            <div className="space-y-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Tax Deductions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {formData.taxDeductions.map((tax, idx) => (
-                <div
-                  key={idx}
-                  className="border border-gray-200 rounded-lg p-4"
-                >
-                  <p className="text-sm font-medium text-gray-900 mb-3">
-                    {tax.name}
-                  </p>
-
+                <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-gray-900 mb-3">{tax.name}</p>
                   {isEditMode ? (
                     <input
                       type="number"
                       value={tax.amount}
-                      onChange={(e) =>
-                        handleTaxChange(idx, "amount", parseFloat(e.target.value))
-                      }
+                      onChange={(e) => handleTaxChange(idx, "amount", e.target.value)}
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                     />
                   ) : (
-                    <p className="text-sm font-semibold text-gray-900">
-                      ₹{tax.amount}
-                    </p>
+                    <p className="text-sm font-semibold text-gray-900">₹{tax.amount?.toLocaleString("en-IN")}</p>
                   )}
-                  <p className="text-xs text-gray-600 mt-1">₹/month</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Net Salary */}
-          <div className="border-2 border-blue-600 rounded-lg p-6 bg-blue-50">
-            <p className="text-sm font-medium text-gray-900 mb-2">Net Salary</p>
-            <p className="text-4xl font-bold text-blue-600">
-              ₹{calculatedNetSalary.toLocaleString("en-IN", {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}
-            </p>
+          {/* Net Salary Summary */}
+          <div className="border-2 border-green-600 rounded-lg p-6 bg-green-50">
+            <p className="text-sm font-medium text-gray-900 mb-2">Take Home (Net Salary)</p>
+            <p className="text-4xl font-bold text-green-600">₹{calculatedNetSalary.toLocaleString("en-IN")}</p>
           </div>
         </div>
       </div>
