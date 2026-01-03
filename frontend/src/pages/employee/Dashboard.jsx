@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { usePermissions } from "../../hooks/usePermissions";
 import Sidebar from "../../components/Sidebar";
 import { FiClock, FiCheckCircle, FiCalendar, FiAlertCircle, FiTrendingUp, FiXCircle } from "react-icons/fi";
-import api from "../../services/api";
 
 export default function EmployeeDashboard() {
   const { user } = useAuth();
+  const { companyData, fetchAttendance, fetchLeaves } = usePermissions();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   
@@ -37,50 +38,81 @@ export default function EmployeeDashboard() {
     recentLeaves: [],
   });
 
+  // Fetch data using shared store
   useEffect(() => {
-    fetchDashboardData();
-    // Auto-refresh every 60 seconds
-    const interval = setInterval(fetchDashboardData, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
+    const loadData = async () => {
       setLoading(true);
-      
-      // Fetch attendance data
-      const attendanceResponse = await api.get("/attendance/my");
-      const { today, records, statistics } = attendanceResponse.data;
-
-      // Fetch leave data
-      const leaveResponse = await api.get("/leave/my");
-      const { leaves, balance } = leaveResponse.data;
-
-      setDashboardData({
-        todayAttendance: today || {
-          status: "Not Marked",
-          date: new Date().toISOString().split("T")[0],
-          checkInTime: null,
-          checkOutTime: null,
-          workingHours: "—",
-        },
-        attendanceStats: {
-          present: statistics.present,
-          late: statistics.late,
-          absent: statistics.absent,
-          halfDay: statistics.halfDay,
-          attendancePercentage: statistics.attendancePercentage,
-          month: statistics.month,
-        },
-        leaveBalance: balance,
-        recentAttendance: records.slice(0, 7),
-        recentLeaves: leaves.slice(0, 5),
-      });
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
-    } finally {
+      await Promise.all([
+        fetchAttendance(),
+        fetchLeaves()
+      ]);
       setLoading(false);
-    }
+    };
+    loadData();
+  }, [fetchAttendance, fetchLeaves]);
+
+  // Calculate dashboard data from shared companyData
+  useEffect(() => {
+    // Always calculate, even with empty data
+    const myAttendance = companyData.attendance.filter(a => a.userId === user?._id || a.user?._id === user?._id);
+    const myLeaves = companyData.leaves.filter(l => l.userId === user?._id || l.user?._id === user?._id);
+    
+    // Process today's attendance
+    const today = new Date().toISOString().split("T")[0];
+    const todayRecord = myAttendance.find(a => a.date?.split("T")[0] === today);
+    
+    // Calculate attendance statistics
+    const present = myAttendance.filter(a => a.status === "present").length;
+    const late = myAttendance.filter(a => a.status === "late").length;
+    const absent = myAttendance.filter(a => a.status === "absent").length;
+    const halfDay = myAttendance.filter(a => a.status === "half-day").length;
+    const attendancePercentage = myAttendance.length > 0 ? ((present + late) / myAttendance.length * 100).toFixed(1) : 0;
+    
+    // Calculate leave balance
+    const approvedLeaves = myLeaves.filter(l => l.status === "approved");
+    const pendingLeaves = myLeaves.filter(l => l.status === "pending");
+    const totalTaken = approvedLeaves.reduce((sum, l) => sum + (l.days || 1), 0);
+    
+    setDashboardData({
+      todayAttendance: todayRecord || {
+        status: "Not Marked",
+        date: today,
+        checkInTime: null,
+        checkOutTime: null,
+        workingHours: "—",
+      },
+      attendanceStats: {
+        present,
+        late,
+        absent,
+        halfDay,
+        attendancePercentage,
+        month: new Date().toLocaleString("default", { month: "long" }),
+      },
+      leaveBalance: {
+        totalLeaves: 18,
+        usedLeaves: totalTaken,
+        remainingLeaves: 18 - totalTaken,
+        pending: pendingLeaves.length,
+        leaveTypes: [
+          { type: "Sick Leave", total: 5, used: Math.min(totalTaken, 5), remaining: Math.max(5 - totalTaken, 0) },
+          { type: "Casual Leave", total: 8, used: Math.min(Math.max(totalTaken - 5, 0), 8), remaining: Math.max(8 - Math.max(totalTaken - 5, 0), 0) },
+          { type: "Earned Leave", total: 5, used: Math.max(totalTaken - 13, 0), remaining: Math.max(5 - Math.max(totalTaken - 13, 0), 0) },
+        ],
+      },
+      recentAttendance: myAttendance.slice(0, 7),
+      recentLeaves: myLeaves.slice(0, 5),
+    });
+  }, [companyData, user]);
+
+  // Refresh function for manual data reload
+  const handleRefresh = async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchAttendance(),
+      fetchLeaves()
+    ]);
+    setLoading(false);
   };
 
   const getStatusColor = (status) => {
@@ -140,7 +172,7 @@ export default function EmployeeDashboard() {
                 <p className="text-sm text-gray-500 mt-1">Welcome back! Here's what's happening today.</p>
               </div>
               <button
-                onClick={fetchDashboardData}
+                onClick={handleRefresh}
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
                 Refresh
@@ -205,29 +237,29 @@ export default function EmployeeDashboard() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Pending Leaves</p>
                   <p className="text-4xl font-bold text-orange-600 mt-2">
-                    {dashboardData.leaveBalance.pending}
+                    {dashboardData.recentLeaves.filter(l => l.status === "Pending").length}
                   </p>
                   <p className="text-xs text-gray-500 mt-2">
-                    <span className="text-orange-600">↓ -3%</span> from last month
+                    <span className="text-orange-600">Awaiting</span> approval
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">Awaiting approval</p>
+                  <p className="text-xs text-gray-400 mt-1">Requests pending</p>
                 </div>
                 <FiAlertCircle className="w-8 h-8 text-orange-500" />
               </div>
             </div>
 
-            {/* Total Leaves */}
+            {/* Remaining Leaves */}
             <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Leaves</p>
+                  <p className="text-sm font-medium text-gray-600">Remaining Leaves</p>
                   <p className="text-4xl font-bold text-purple-600 mt-2">
-                    {dashboardData.leaveBalance.totalTaken}
+                    {dashboardData.leaveBalance.remainingLeaves || 0}
                   </p>
                   <p className="text-xs text-gray-500 mt-2">
-                    <span className="text-purple-600">↑ +2%</span> from last month
+                    Out of {dashboardData.leaveBalance.totalLeaves || 18}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">All time</p>
+                  <p className="text-xs text-gray-400 mt-1">Available to use</p>
                 </div>
                 <FiCalendar className="w-8 h-8 text-purple-500" />
               </div>
@@ -242,26 +274,33 @@ export default function EmployeeDashboard() {
               <p className="text-sm text-gray-500 mb-4">Last 7 days</p>
               
               <div className="h-64 flex items-end justify-between gap-2">
-                {dashboardData.recentAttendance.slice(0, 7).map((record, idx) => {
-                  const height = record.status === "present" || record.status === "late" ? 100 : 75;
-                  const color = record.status === "present" 
-                    ? "bg-green-500" 
-                    : record.status === "late" 
-                    ? "bg-orange-500" 
-                    : record.status === "absent"
-                    ? "bg-red-500"
-                    : "bg-yellow-500";
-                  
-                  return (
-                    <div key={idx} className="flex-1 flex flex-col items-center">
-                      <div 
-                        className={`w-full ${color} rounded-t-lg transition-all hover:opacity-80`}
-                        style={{ height: `${height}%` }}
-                      ></div>
-                      <p className="text-xs text-gray-500 mt-2">{new Date(record.date).getDate()}</p>
-                    </div>
-                  );
-                })}
+                {dashboardData.recentAttendance && dashboardData.recentAttendance.length > 0 ? (
+                  dashboardData.recentAttendance.slice(0, 7).map((record, idx) => {
+                    const height = record.status === "present" || record.status === "late" ? 100 : 40;
+                    const color = record.status === "present" 
+                      ? "bg-green-500" 
+                      : record.status === "late" 
+                      ? "bg-orange-500" 
+                      : record.status === "absent"
+                      ? "bg-red-500"
+                      : "bg-yellow-500";
+                    
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center">
+                        <div 
+                          className={`w-full ${color} rounded-t-lg transition-all hover:opacity-80`}
+                          style={{ height: `${height}%` }}
+                          title={`${record.status} - ${record.date}`}
+                        ></div>
+                        <p className="text-xs text-gray-500 mt-2">{new Date(record.date).getDate()}</p>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="w-full flex items-center justify-center text-gray-400">
+                    <p>No attendance data available</p>
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center justify-center gap-4 mt-6 text-xs">
@@ -325,32 +364,38 @@ export default function EmployeeDashboard() {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">My Monthly Attendance</h2>
               
               <div className="space-y-3">
-                {dashboardData.recentAttendance.slice(0, 10).map((record, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:shadow-md transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-gray-900">
-                          {new Date(record.date).getDate()}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(record.date).toLocaleDateString("en-US", { weekday: "short" })}
-                        </p>
+                {dashboardData.recentAttendance && dashboardData.recentAttendance.length > 0 ? (
+                  dashboardData.recentAttendance.slice(0, 10).map((record, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:shadow-md transition"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-900">
+                            {new Date(record.date).getDate()}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(record.date).toLocaleDateString("en-US", { weekday: "short" })}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 capitalize">{record.status}</p>
+                          <p className="text-xs text-gray-500">
+                            {record.checkIn ? `${record.checkIn} - ${record.checkOut || "—"}` : "No record"}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 capitalize">{record.status}</p>
-                        <p className="text-xs text-gray-500">
-                          {record.checkIn ? `${record.checkIn} - ${record.checkOut || "—"}` : "No record"}
-                        </p>
-                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                        {record.status}
+                      </span>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                      {record.status}
-                    </span>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <p>No attendance records found</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -360,27 +405,15 @@ export default function EmployeeDashboard() {
               
               {/* Leave Balance Summary */}
               <div className="grid grid-cols-3 gap-3 mb-6">
-                <div className="bg-blue-50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-600 mb-1">Sick Leave</p>
-                  <p className="text-xl font-bold text-blue-600">
-                    {dashboardData.leaveBalance.sick.remaining}
-                  </p>
-                  <p className="text-xs text-gray-500">remaining</p>
-                </div>
-                <div className="bg-green-50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-600 mb-1">Casual Leave</p>
-                  <p className="text-xl font-bold text-green-600">
-                    {dashboardData.leaveBalance.casual.remaining}
-                  </p>
-                  <p className="text-xs text-gray-500">remaining</p>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-600 mb-1">Earned Leave</p>
-                  <p className="text-xl font-bold text-purple-600">
-                    {dashboardData.leaveBalance.earned.remaining}
-                  </p>
-                  <p className="text-xs text-gray-500">remaining</p>
-                </div>
+                {dashboardData.leaveBalance.leaveTypes && dashboardData.leaveBalance.leaveTypes.map((leaveType, idx) => (
+                  <div key={idx} className="bg-blue-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-600 mb-1">{leaveType.type}</p>
+                    <p className="text-xl font-bold text-blue-600">
+                      {leaveType.remaining}
+                    </p>
+                    <p className="text-xs text-gray-500">remaining</p>
+                  </div>
+                ))}
               </div>
 
               {/* Recent Leave Requests */}

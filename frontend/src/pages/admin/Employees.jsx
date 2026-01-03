@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { usePermissions } from "../../hooks/usePermissions";
 import Sidebar from "../../components/Sidebar";
 import EmployeeDetailsModal from "../../components/EmployeeDetailsModal";
 import { FiPlus, FiEdit2, FiTrash2, FiSearch } from "react-icons/fi";
-import api from "../../services/api"; //
 
 export default function Employees() {
   const { user } = useAuth();
+  const { companyData, canDo, fetchEmployees, createEmployee, updateEmployee, deleteEmployee } = usePermissions();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -15,9 +16,6 @@ export default function Employees() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
-
-  // --- Backend Integration State ---
-  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -28,46 +26,45 @@ export default function Employees() {
     position: "",
     joinDate: "",
     salary: "",
+    role: "employee",
   });
 
-  // 1. Fetch Employees from Backend
-  const fetchEmployees = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("/employee/all");
-      setEmployees(response.data.data);
-    } catch (err) {
-      console.error("Failed to fetch employees", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Load employees from shared data
   useEffect(() => {
-    fetchEmployees();
-  }, []);
+    const loadData = async () => {
+      setLoading(true);
+      await fetchEmployees();
+      setLoading(false);
+    };
+    loadData();
+  }, [fetchEmployees]);
 
-  // 2. Handle Form Input Changes
+  // Get employees from shared store
+  const employees = companyData.employees || [];
+
+  // Handle Form Input Changes
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // 3. Handle Form Submission (Add Employee)
+  // Handle Form Submission (Add Employee)
   const handleAddEmployee = async (e) => {
     e.preventDefault();
+    if (!canDo('createEmployee')) {
+      alert('You do not have permission to create employees');
+      return;
+    }
     try {
       const submissionData = {
         ...formData,
         name: `${formData.firstName} ${formData.lastName}`.trim(),
       };
-      const response = await api.post("/employee/create", submissionData);
+      const response = await createEmployee(submissionData);
       
-      // Notify Admin of generated credentials
-      alert(`Employee Added!\nLogin ID: ${response.data.credentials.loginId}\nTemp Password: ${response.data.credentials.temporaryPassword}`);
+      alert(`Employee Added!\nLogin ID: ${response.credentials.loginId}\nTemp Password: ${response.credentials.temporaryPassword}`);
       
       setShowAddModal(false);
-      setFormData({ firstName: "", lastName: "", email: "", phone: "", department: "", position: "", joinDate: "", salary: "" });
-      fetchEmployees(); 
+      setFormData({ firstName: "", lastName: "", email: "", phone: "", department: "", position: "", joinDate: "", salary: "", role: "employee" });
     } catch (err) {
       alert(err.response?.data?.error || "Error adding employee");
     }
@@ -96,18 +93,21 @@ export default function Employees() {
 
   const handleUpdateEmployee = async (e) => {
     e.preventDefault();
+    if (!canDo('updateEmployee')) {
+      alert('You do not have permission to update employees');
+      return;
+    }
     try {
       const submissionData = {
         ...formData,
         name: `${formData.firstName} ${formData.lastName}`.trim(),
       };
-      await api.put(`/employee/${selectedEmployee._id}`, submissionData);
+      await updateEmployee(selectedEmployee._id, submissionData);
       
       alert("Employee updated successfully!");
       setShowEditModal(false);
       setSelectedEmployee(null);
-      setFormData({ firstName: "", lastName: "", email: "", phone: "", department: "", position: "", joinDate: "", salary: "" });
-      fetchEmployees();
+      setFormData({ firstName: "", lastName: "", email: "", phone: "", department: "", position: "", joinDate: "", salary: "", role: "employee" });
     } catch (err) {
       alert(err.response?.data?.error || "Error updating employee");
     }
@@ -120,12 +120,16 @@ export default function Employees() {
   };
 
   const handleDeleteConfirm = async () => {
+    if (!canDo('deleteEmployee')) {
+      alert('You do not have permission to delete employees');
+      setShowDeleteConfirm(false);
+      return;
+    }
     try {
-      await api.delete(`/employee/${selectedEmployee._id}`);
+      await deleteEmployee(selectedEmployee._id);
       alert("Employee deleted successfully!");
       setShowDeleteConfirm(false);
       setSelectedEmployee(null);
-      fetchEmployees();
     } catch (err) {
       alert(err.response?.data?.error || "Error deleting employee");
     }
@@ -164,7 +168,7 @@ export default function Employees() {
                   : "View and manage employee information"}
               </p>
             </div>
-            {(user?.role === "admin" || user?.role === "hr") && (
+            {canDo('createEmployee') && (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition"
@@ -277,18 +281,22 @@ export default function Employees() {
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">₹{emp.salary?.toLocaleString()}</td>
                         <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => handleEditClick(emp)} 
-                              className="p-2 hover:bg-blue-50 rounded-lg text-blue-600"
-                            >
-                              <FiEdit2 className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteClick(emp)} 
-                              className="p-2 hover:bg-red-50 rounded-lg text-red-600"
-                            >
-                              <FiTrash2 className="w-4 h-4" />
-                            </button>
+                            {canDo('updateEmployee') && (
+                              <button 
+                                onClick={() => handleEditClick(emp)} 
+                                className="p-2 hover:bg-blue-50 rounded-lg text-blue-600"
+                              >
+                                <FiEdit2 className="w-4 h-4" />
+                              </button>
+                            )}
+                            {canDo('deleteEmployee') && (
+                              <button 
+                                onClick={() => handleDeleteClick(emp)} 
+                                className="p-2 hover:bg-red-50 rounded-lg text-red-600"
+                              >
+                                <FiTrash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -353,6 +361,17 @@ export default function Employees() {
                   <input type="number" name="salary" required value={formData.salary} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
               </div>
+              {user?.role === 'admin' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <select name="role" value={formData.role} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="employee">Employee</option>
+                    <option value="hr">HR</option>
+                    <option value="manager">Manager</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Select HR to give employee management access</p>
+                </div>
+              )}
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition">Cancel</button>
                 <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition">Add Employee</button>
