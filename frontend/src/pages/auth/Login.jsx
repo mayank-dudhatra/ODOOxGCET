@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { login, signup } from "../services/auth.api";
+import { login, signup } from "../../services/auth.api";
 
 export default function Login() {
   const [isSignup, setIsSignup] = useState(false);
